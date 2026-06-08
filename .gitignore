@@ -1,0 +1,63 @@
+# ── Virtual environment ────────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ── MediaPipe model (large binary — download separately, see README) ───────────
+*.task
+
+# ── Project databases (research data — not for version control) ────────────────
+*.db
+
+# ── Generated / local config files ────────────────────────────────────────────
+flask_app/settings.json
+region_result.json
+region_selector.log
+flask_app/control_panel.log
+
+# ── Test and scratch files ─────────────────────────────────────────────────────
+*.mov
+*.mp4
+*.avi
+*.mkv
+sock_dance_pipeline_v1.ipynb
+
+# ── macOS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Editors ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Jupyter ────────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Streamlit (legacy — superseded by Flask app) ──────────────────────────────
+.streamlit/
+platformpose.py
+control_panel.py
+pages/
+
+# ── Claude Code local settings ─────────────────────────────────────────────────
+.claude/
+
+# ── Debug artifacts ────────────────────────────────────────────────────────────
+flask_app/debug_frame.png
+
+# ── Temp files written by Flask/control panel ──────────────────────────────────
+flask_app/*.json
+!flask_app/settings.json.example
+flask_app/server.log
+figure_frame/server.log
