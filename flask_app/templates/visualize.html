@@ -1,0 +1,651 @@
+{% extends "base.html" %}
+{% block title %}Skeleton Viewer — {{ video_id or project }}{% endblock %}
+
+{% block body %}
+<style>
+  .vp-page  { min-height:100vh; background:#f8fafc; padding:2rem 1.5rem; }
+  .vp-wrap  { max-width:940px; margin:0 auto; }
+
+  /* Header */
+  .vp-header {
+    display:flex; align-items:flex-start; gap:1rem;
+    padding-bottom:1.25rem; border-bottom:1px solid #e5e7eb;
+    margin-bottom:1.75rem; flex-wrap:wrap;
+  }
+  .vp-back  { font-size:0.8rem; color:#6b7280; display:block; margin-bottom:0.2rem; }
+  .vp-back:hover { color:var(--primary); text-decoration:none; }
+  .vp-title { font-size:1.6rem; font-weight:700; color:#111; letter-spacing:-0.03em; line-height:1.2; }
+  .vp-meta  { font-size:0.82rem; color:#6b7280; margin-top:0.15rem; }
+  .vp-select {
+    padding:0.38rem 0.6rem; border:1px solid #c0c3d4; border-radius:6px;
+    font-size:0.82rem; font-family:inherit; background:#fff; color:#1a1c2e;
+    cursor:pointer; margin-left:auto; align-self:center;
+  }
+  .vp-select:focus { outline:none; border-color:var(--primary);
+                     box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+
+  /* Body layout */
+  .vp-body  { display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap; }
+
+  /* Canvas */
+  .vp-canvas-wrap {
+    position:relative; border-radius:10px; overflow:hidden;
+    box-shadow:0 8px 30px rgba(0,0,0,.35); flex-shrink:0;
+  }
+  #pose-canvas { display:block; background:#111827; }
+
+  .vp-overlay {
+    position:absolute; inset:0; background:#111827;
+    display:flex; align-items:center; justify-content:center;
+    gap:0.5rem; color:#9ca3af; font-size:0.88rem;
+  }
+  .vp-overlay.hidden { display:none; }
+
+  /* Controls */
+  .vp-controls { flex:1; min-width:220px; display:flex; flex-direction:column; gap:1.1rem; }
+
+  /* Scrubber */
+  .scrubber-wrap { display:flex; align-items:center; gap:0.5rem; }
+  .scrubber-wrap input[type=range] {
+    flex:1; accent-color:var(--primary); cursor:pointer; height:4px;
+  }
+  .time-lbl { font-size:0.75rem; color:#6b7280; white-space:nowrap; min-width:3.4rem; }
+  #time-current { text-align:right; }
+
+  /* Transport */
+  .transport { display:flex; align-items:center; gap:0.6rem; }
+  .play-btn {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    padding:0.52rem 1.1rem; border-radius:7px; font-size:0.84rem;
+    font-weight:600; font-family:inherit; border:none; cursor:pointer;
+    background:var(--primary); color:#fff;
+    transition:background 120ms ease;
+  }
+  .play-btn:hover { background:var(--primary-dark); }
+  .loop-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:2.1rem; height:2.1rem; border-radius:7px; font-size:1rem;
+    border:1px solid #d1d5db; background:#fff; cursor:pointer;
+    color:#6b7280; transition:all 120ms ease;
+  }
+  .loop-btn.on  { background:#dbeafe; border-color:var(--primary); color:var(--primary); }
+  .loop-btn:hover { border-color:var(--primary); color:var(--primary); }
+
+  /* Speed */
+  .ctrl-label {
+    font-size:0.7rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.06em; color:#9ca3af; margin-bottom:0.35rem;
+  }
+  .speed-btns { display:flex; gap:0.3rem; }
+  .speed-btn {
+    padding:0.3rem 0.65rem; border-radius:5px; font-size:0.78rem;
+    font-weight:600; font-family:inherit; cursor:pointer;
+    border:1px solid #d1d5db; background:#fff; color:#374151;
+    transition:all 120ms ease;
+  }
+  .speed-btn:hover { border-color:var(--primary); color:var(--primary); }
+  .speed-btn.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+
+  /* Stats */
+  .stats { display:flex; flex-direction:column; gap:0.35rem; }
+  .stat-row {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:0.8rem; padding:0.3rem 0; border-bottom:1px solid #f3f4f6;
+  }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-lbl { color:#9ca3af; }
+  .stat-val { font-weight:600; color:#374151; font-variant-numeric:tabular-nums; }
+
+  /* Legend */
+  .legend { display:flex; gap:1rem; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:0.35rem;
+                 font-size:0.76rem; color:#6b7280; }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* Keyboard hint */
+  .kbd-hint { font-size:0.72rem; color:#c0c3cf; line-height:1.8; }
+  .kbd { display:inline-block; background:#f3f4f6; border:1px solid #d1d5db;
+         border-radius:4px; padding:0 5px; font-family:monospace; font-size:0.7rem; }
+</style>
+
+<div class="vp-page">
+<div class="vp-wrap">
+
+  <!-- ── Header ── -->
+  <div class="vp-header">
+    <div>
+      <a href="/" class="vp-back">← PlatformPose</a>
+      <div class="vp-title">Skeleton Viewer</div>
+      <div class="vp-meta" id="vp-meta">
+        {{ project }}{% if video_id %} · {{ video_id }}{% endif %}
+      </div>
+    </div>
+
+    {% if videos|length > 1 %}
+    <select id="video-select" class="vp-select" aria-label="Select video">
+      {% for v in videos %}
+      <option value="{{ v }}"{% if v == video_id %} selected{% endif %}>{{ v }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+
+  <!-- ── Body ── -->
+  <div class="vp-body">
+
+    <!-- Canvas -->
+    <div class="vp-canvas-wrap" id="canvas-wrap">
+      <canvas id="pose-canvas" width="360" height="640"></canvas>
+      <div class="vp-overlay" id="loading-overlay">
+        <span class="spinner"></span> Loading frames…
+      </div>
+      <div class="vp-overlay hidden" id="error-overlay">
+        <span id="error-msg" style="color:#f87171; text-align:center; padding:1rem;"></span>
+      </div>
+      <div class="vp-overlay hidden" id="no-video-overlay"
+           style="flex-direction:column; gap:0.5rem;">
+        <span style="font-size:2rem;">🦴</span>
+        <span>Select a video above to begin</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="vp-controls" id="vp-controls" style="opacity:0.4; pointer-events:none;">
+
+      <!-- Scrubber -->
+      <div class="scrubber-wrap">
+        <span class="time-lbl" id="time-current" style="text-align:left;">0.00s</span>
+        <input type="range" id="scrubber" min="0" max="100" value="0">
+        <span class="time-lbl" id="time-total">0.00s</span>
+      </div>
+
+      <!-- Transport -->
+      <div class="transport">
+        <button class="play-btn" id="play-btn">▶ Play</button>
+        <button class="loop-btn on" id="loop-btn" title="Loop">↺</button>
+      </div>
+
+      <!-- Speed -->
+      <div>
+        <div class="ctrl-label">Playback Speed</div>
+        <div class="speed-btns">
+          <button class="speed-btn"    data-speed="0.25">¼×</button>
+          <button class="speed-btn"    data-speed="0.5">½×</button>
+          <button class="speed-btn on" data-speed="1">1×</button>
+          <button class="speed-btn"    data-speed="2">2×</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div>
+        <div class="ctrl-label">Session Info</div>
+        <div class="stats">
+          <div class="stat-row">
+            <span class="stat-lbl">Frame</span>
+            <span class="stat-val" id="stat-frame">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-lbl">Time</span>
+            <span class="stat-val" id="stat-time">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-lbl">Clean frames</span>
+            <span class="stat-val" id="stat-poses">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-lbl">Duration</span>
+            <span class="stat-val" id="stat-dur">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-lbl">Retention rate</span>
+            <span class="stat-val" id="stat-retention">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-lbl">Out-of-frame rate</span>
+            <span class="stat-val" id="stat-outofframe">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-lbl">Depth spread (z)</span>
+            <span class="stat-val" id="stat-depth">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Depth toggle -->
+      <div>
+        <div class="ctrl-label">Depth (z-axis)</div>
+        <label style="display:flex; align-items:center; gap:0.5rem;
+                       cursor:pointer; font-size:0.8rem; color:#374151;">
+          <input type="checkbox" id="depth-toggle"
+                 style="accent-color:var(--primary); cursor:pointer; width:14px; height:14px;">
+          Show depth encoding
+        </label>
+        <p style="font-size:0.71rem; color:#9ca3af; margin-top:0.35rem; line-height:1.5;">
+          Thicker lines &amp; larger joints are closer to the camera.
+          MediaPipe z is hip-relative, not metric.
+        </p>
+      </div>
+
+      <!-- Legend -->
+      <div>
+        <div class="ctrl-label">Legend</div>
+        <div class="legend">
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#60a5fa;"></span>Left
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#f87171;"></span>Right
+          </div>
+          <div class="legend-item">
+            <span style="display:inline-block; width:18px; height:0;
+                         border-top:2px dashed #6b7280; vertical-align:middle;
+                         margin-right:2px;"></span>Floor
+          </div>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div>
+        <div class="ctrl-label">Export</div>
+        <a id="download-video-btn" href="#"
+           class="btn btn-outline btn-sm"
+           style="display:inline-flex; align-items:center; gap:0.35rem;">
+          ↓ Download MP4
+        </a>
+        <p style="font-size:0.71rem; color:#9ca3af; margin-top:0.35rem; line-height:1.5;">
+          540 px wide · 30 fps · mp4v codec.<br>
+          Compatible with QuickTime, VLC, and most video tools.
+        </p>
+      </div>
+
+      <!-- Keyboard shortcuts -->
+      <div class="kbd-hint">
+        <span class="kbd">Space</span> play/pause &nbsp;
+        <span class="kbd">←</span><span class="kbd">→</span> step frame
+      </div>
+
+    </div>
+    <!-- end controls -->
+
+  </div>
+  <!-- end body -->
+
+
+</div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ── MediaPipe connections by body side ────────────────────────────────────────
+const SEGS = {
+  center: [
+    [0,1],[1,2],[2,3],[3,7],    // face left side
+    [0,4],[4,5],[5,6],[6,8],    // face right side
+    [9,10],                     // mouth
+    [11,12],[23,24],            // shoulders / hips
+  ],
+  left: [
+    [11,13],[13,15],            // upper arm
+    [15,17],[15,19],[15,21],[17,19],  // hand
+    [11,23],[23,25],[25,27],    // torso + leg
+    [27,29],[27,31],[29,31],    // foot
+  ],
+  right: [
+    [12,14],[14,16],            // upper arm
+    [16,18],[16,20],[16,22],[18,20],  // hand
+    [12,24],[24,26],[26,28],    // torso + leg
+    [28,30],[28,32],[30,32],    // foot
+  ],
+};
+
+// RGB for each side (drawn on dark background)
+const CLR = {
+  center: [156, 163, 175],   // gray-400
+  left:   [ 96, 165, 250],   // blue-400
+  right:  [248, 113, 113],   // red-400
+};
+
+// Which side each landmark belongs to (for dot colouring)
+const LM_SIDE = new Array(33).fill('center');
+[1,2,3,7,9,11,13,15,17,19,21,23,25,27,29,31].forEach(i => LM_SIDE[i] = 'left');
+[4,5,6,8,10,12,14,16,18,20,22,24,26,28,30,32].forEach(i => LM_SIDE[i] = 'right');
+
+// ── Rate badge helpers ────────────────────────────────────────────────────────
+// Thresholds based on expected MediaPipe heavy-model performance on clean footage.
+function _badge(pct, bg, fg) {
+  return `<span style="display:inline-flex; align-items:center;
+                        padding:0.15rem 0.45rem; border-radius:999px;
+                        background:${bg}; color:${fg};
+                        font-size:0.72rem; font-weight:700;">${pct}%</span>`;
+}
+// Retention: higher is better. ≥75% green, 50–74% amber, <50% red.
+function retentionBadge(pct) {
+  if (pct >= 75) return _badge(pct, '#dcfce7', '#14532d');
+  if (pct >= 50) return _badge(pct, '#fef9c3', '#854d0e');
+  return _badge(pct, '#fee2e2', '#7f1d1d');
+}
+// Out-of-frame: lower is better. <25% green, 25–49% amber, ≥50% red.
+function outOfFrameBadge(pct) {
+  if (pct < 25)  return _badge(pct, '#dcfce7', '#14532d');
+  if (pct < 50)  return _badge(pct, '#fef9c3', '#854d0e');
+  return _badge(pct, '#fee2e2', '#7f1d1d');
+}
+
+// ── Depth (z) helpers ─────────────────────────────────────────────────────────
+// MediaPipe z: negative = toward camera, positive = away, origin at hips.
+// Returns 0 (furthest from camera) → 1 (closest to camera).
+function zWeight(z) {
+  if (!data || data.z_max === data.z_min) return 0.5;
+  // Invert range: more negative z → higher weight
+  return 1 - (z - data.z_min) / (data.z_max - data.z_min);
+}
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const canvas       = document.getElementById('pose-canvas');
+const ctx          = canvas.getContext('2d');
+const loadingEl    = document.getElementById('loading-overlay');
+const errorEl      = document.getElementById('error-overlay');
+const errorMsg     = document.getElementById('error-msg');
+const noVideoEl    = document.getElementById('no-video-overlay');
+const controls     = document.getElementById('vp-controls');
+const playBtn      = document.getElementById('play-btn');
+const loopBtn      = document.getElementById('loop-btn');
+const scrubber     = document.getElementById('scrubber');
+const timeCurrent  = document.getElementById('time-current');
+const timeTotal    = document.getElementById('time-total');
+const statFrame      = document.getElementById('stat-frame');
+const statTime       = document.getElementById('stat-time');
+const statPoses      = document.getElementById('stat-poses');
+const statDur        = document.getElementById('stat-dur');
+const statRetention  = document.getElementById('stat-retention');
+const statOutOfFrame = document.getElementById('stat-outofframe');
+const statDepth      = document.getElementById('stat-depth');
+const depthToggle    = document.getElementById('depth-toggle');
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let data          = null;
+let currentFrame  = 0;
+let playing       = false;
+let looping       = true;
+let speed         = 1.0;
+let playStartWall = null;
+let playStartData = 0;
+let rafId         = null;
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+async function loadVideo(project, videoId) {
+  pause();
+  currentFrame = 0;
+  data = null;
+
+  loadingEl.classList.remove('hidden');
+  errorEl.classList.add('hidden');
+  noVideoEl.classList.add('hidden');
+  controls.style.opacity = '0.4';
+  controls.style.pointerEvents = 'none';
+
+  try {
+    const url = `/api/frames?project=${encodeURIComponent(project)}&video_id=${encodeURIComponent(videoId)}`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || res.statusText);
+    data = json;
+  } catch (e) {
+    loadingEl.classList.add('hidden');
+    errorMsg.textContent = e.message;
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  // Size canvas to match capture region aspect ratio
+  const maxW = Math.min(400, window.innerWidth - 280);
+  const maxH = Math.min(700, window.innerHeight - 200);
+  const ar   = data.region_height / data.region_width;
+  let cw, ch;
+  if (maxW * ar <= maxH) { cw = maxW; ch = Math.round(maxW * ar); }
+  else                   { ch = maxH; cw = Math.round(maxH / ar); }
+  canvas.width  = cw;
+  canvas.height = ch;
+
+  // Update stats
+  scrubber.max     = data.frames.length - 1;
+  scrubber.value   = 0;
+  timeTotal.textContent   = data.duration_s.toFixed(2) + 's';
+  timeCurrent.textContent = '0.00s';
+  statPoses.textContent   = data.clean_frames != null
+    ? `${data.clean_frames} / ${data.total_attempted}`
+    : data.frame_count;
+  statDur.textContent     = data.duration_s.toFixed(2) + 's';
+  statRetention.innerHTML  = data.retention_rate    != null
+    ? retentionBadge(data.retention_rate)    : '—';
+  statOutOfFrame.innerHTML = data.out_of_frame_rate != null
+    ? outOfFrameBadge(data.out_of_frame_rate) : '—';
+
+  loadingEl.classList.add('hidden');
+  controls.style.opacity = '1';
+  controls.style.pointerEvents = '';
+
+  // Wire up the download button for this video
+  const dlBtn = document.getElementById('download-video-btn');
+  dlBtn.href = `/api/export-video?project=${encodeURIComponent(project)}&video_id=${encodeURIComponent(videoId)}`;
+  dlBtn.download = `${project}_${videoId}_skeleton.mp4`;
+
+  drawFrame(0);
+  updateUI();
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+// lms tuple layout: [x, y, z, vis]  (indices 0-3)
+function drawFrame(idx) {
+  if (!data) return;
+  const frame     = data.frames[Math.max(0, Math.min(idx, data.frames.length - 1))];
+  const W         = canvas.width, H = canvas.height;
+  const showDepth = depthToggle && depthToggle.checked;
+
+  // Background
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, W, H);
+
+  // Floor line
+  if (data.floor_y != null) {
+    const fy = data.floor_y * H;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(107,114,128,0.55)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([8, 5]);
+    ctx.beginPath(); ctx.moveTo(0, fy); ctx.lineTo(W, fy); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Connections
+  for (const [side, pairs] of Object.entries(SEGS)) {
+    const [r, g, b] = CLR[side];
+    for (const [ai, bi] of pairs) {
+      const la = frame.lms[ai], lb = frame.lms[bi];
+      const alpha = Math.min(la[3], lb[3]) * 0.88;   // vis at [3]
+      if (alpha < 0.04) continue;
+      // Depth encoding: thicker lines are closer to the camera
+      const lw = showDepth
+        ? 1 + ((zWeight(la[2]) + zWeight(lb[2])) / 2) * 3  // 1–4 px
+        : 2;
+      ctx.lineWidth = lw;
+      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
+      ctx.beginPath();
+      ctx.moveTo(la[0] * W, la[1] * H);
+      ctx.lineTo(lb[0] * W, lb[1] * H);
+      ctx.stroke();
+    }
+  }
+
+  // Joints
+  for (let i = 0; i < 33; i++) {
+    const lm = frame.lms[i];
+    if (lm[3] < 0.04) continue;                       // vis at [3]
+    const [r, g, b] = CLR[LM_SIDE[i]];
+    // Depth encoding: larger dots are closer to the camera
+    const radius = showDepth ? 2 + zWeight(lm[2]) * 3 : 3.5;  // 2–5 px
+    ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(lm[3] + 0.1, 1).toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(lm[0] * W, lm[1] * H, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ── Playback ──────────────────────────────────────────────────────────────────
+function getFrameAt(t) {
+  // Binary search: last frame with timestamp ≤ t
+  const frames = data.frames;
+  let lo = 0, hi = frames.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+  }
+  return lo;
+}
+
+function tick(now) {
+  if (!playing) return;
+  if (playStartWall === null) playStartWall = now;
+
+  let dataTime = playStartData + (now - playStartWall) / 1000 * speed;
+
+  if (dataTime >= data.duration_s) {
+    if (looping) {
+      playStartWall = now;
+      playStartData = 0;
+      dataTime = 0;
+    } else {
+      currentFrame = data.frames.length - 1;
+      drawFrame(currentFrame);
+      updateUI();
+      pause();
+      return;
+    }
+  }
+
+  currentFrame = getFrameAt(dataTime);
+  drawFrame(currentFrame);
+  updateUI();
+  rafId = requestAnimationFrame(tick);
+}
+
+function play() {
+  if (!data || playing) return;
+  playing = true;
+  playStartWall = null;
+  playStartData = data.frames[currentFrame].t;
+  playBtn.textContent = '⏸ Pause';
+  rafId = requestAnimationFrame(tick);
+}
+
+function pause() {
+  playing = false;
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  playBtn.textContent = '▶ Play';
+}
+
+function togglePlay() { playing ? pause() : play(); }
+
+// ── UI sync ───────────────────────────────────────────────────────────────────
+function updateUI() {
+  if (!data) return;
+  const t     = data.frames[currentFrame].t;
+  const frame = data.frames[currentFrame];
+  scrubber.value           = currentFrame;
+  timeCurrent.textContent  = t.toFixed(2) + 's';
+  statFrame.textContent    = (currentFrame + 1) + ' / ' + data.frame_count;
+  statTime.textContent     = t.toFixed(3) + 's';
+
+  // Depth spread: range of z across visible body landmarks this frame
+  if (statDepth) {
+    const zVals = frame.lms.slice(11, 33)
+      .filter(lm => lm[3] > 0.1)   // vis at [3]
+      .map(lm => lm[2]);            // z at [2]
+    if (zVals.length > 1) {
+      const spread = Math.max(...zVals) - Math.min(...zVals);
+      statDepth.textContent = spread.toFixed(3);
+    } else {
+      statDepth.textContent = '—';
+    }
+  }
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+playBtn.addEventListener('click', togglePlay);
+
+loopBtn.addEventListener('click', function () {
+  looping = !looping;
+  this.classList.toggle('on', looping);
+});
+
+scrubber.addEventListener('input', function () {
+  const wasPlaying = playing;
+  pause();
+  currentFrame = parseInt(this.value);
+  drawFrame(currentFrame);
+  updateUI();
+  if (wasPlaying) {
+    playStartWall = null;
+    playStartData = data.frames[currentFrame].t;
+    playing = true;
+    playBtn.textContent = '⏸ Pause';
+    rafId = requestAnimationFrame(tick);
+  }
+});
+
+depthToggle.addEventListener('change', function () {
+  if (!playing) drawFrame(currentFrame);
+});
+
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    speed = parseFloat(this.dataset.speed);
+    if (playing) { playStartWall = null; playStartData = data.frames[currentFrame].t; }
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('on'));
+    this.classList.add('on');
+  });
+});
+
+{% if videos|length > 1 %}
+document.getElementById('video-select').addEventListener('change', function () {
+  const vid = this.value;
+  document.getElementById('vp-meta').textContent = '{{ project }} · ' + vid;
+  loadVideo({{ project|tojson }}, vid);
+  const url = new URL(window.location);
+  url.searchParams.set('video_id', vid);
+  history.replaceState(null, '', url);
+});
+{% endif %}
+
+document.addEventListener('keydown', function (e) {
+  if (!data) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault(); togglePlay();
+  } else if (e.code === 'ArrowLeft') {
+    pause();
+    currentFrame = Math.max(0, currentFrame - 1);
+    drawFrame(currentFrame); updateUI();
+  } else if (e.code === 'ArrowRight') {
+    pause();
+    currentFrame = Math.min(data.frames.length - 1, currentFrame + 1);
+    drawFrame(currentFrame); updateUI();
+  }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+{% if video_id %}
+  loadingEl.classList.remove('hidden');
+  noVideoEl.classList.add('hidden');
+  loadVideo({{ project|tojson }}, {{ video_id|tojson }});
+{% else %}
+  loadingEl.classList.add('hidden');
+  noVideoEl.classList.remove('hidden');
+{% endif %}
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% if state == 'duplicate_video' %}
+{# ── Video ID already in corpus — confirm before launching ───────────────── #}
+<div class="alert alert-warning" style="margin-bottom:0.75rem;">
+  <strong>Video ID already exists.</strong><br>
+  <code>{{ video_id }}</code> already has {{ existing_frames }}
+  frame{{ 's' if existing_frames != 1 else '' }} in this project.
+  Update the Video ID in Settings, or choose an option below.
+</div>
+<div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+  <button class="btn btn-sm"
+          style="background:#f59e0b; color:#fff;"
+          hx-post="/api/launch-control-panel"
+          hx-include="#settings-form"
+          hx-vals='{"force": "true"}'
+          hx-target="#launch-status"
+          hx-swap="innerHTML">
+    Append
+  </button>
+  <button class="btn btn-sm"
+          style="background:#ef4444; color:#fff;"
+          hx-post="/api/launch-control-panel"
+          hx-include="#settings-form"
+          hx-vals='{"replace": "true"}'
+          hx-target="#launch-status"
+          hx-swap="innerHTML">
+    Replace Original
+  </button>
+  <button class="btn btn-outline btn-sm"
+          onclick="document.getElementById('launch-status').innerHTML=''">
+    Cancel
+  </button>
+</div>
+<p style="font-size:0.74rem; color:#6b7280; margin-top:0.1rem;">
+  <strong>Append</strong> — add new frames alongside the existing ones.
+  <strong>Replace</strong> — permanently delete the {{ existing_frames }}
+  existing frame{{ 's' if existing_frames != 1 else '' }} and start fresh.
+</p>
+
+{% elif state == 'active' %}
+{# ── Control panel open — poll every 2s until it closes ─────────────────── #}
+<div hx-get="/api/capture-status"
+     hx-trigger="every 2s"
+     hx-target="#launch-status"
+     hx-swap="innerHTML">
+  <div class="alert alert-info" style="display:flex; align-items:flex-start; gap:0.6rem;">
+    <span class="spinner" style="margin-top:0.15rem; flex-shrink:0;"></span>
+    <div>
+      <strong>Control panel is open.</strong><br>
+      Switch to it and press <strong>Start</strong> (or Space) to begin capture.
+      Press <strong>Stop</strong> when your video ends.
+    </div>
+  </div>
+</div>
+
+{% elif state == 'complete' %}
+{# ── Session finished — show success and auto-refresh corpus ─────────────── #}
+<div class="alert alert-success"
+     style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;">
+    <circle cx="7" cy="7" r="7" fill="#48c78e"/>
+    <path d="M4 7l2 2 4-4" stroke="white" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div>
+    <strong>Session complete.</strong>
+    Corpus updated — ready for another capture.
+  </div>
+</div>
+{# Trigger corpus table to refresh as soon as this element loads #}
+<div hx-get="/api/corpus?project={{ project }}"
+     hx-trigger="load"
+     hx-target="#corpus"
+     hx-swap="innerHTML"
+     style="display:none;">
+</div>
+
+{% elif state == 'error' %}
+{# ── Launch error ────────────────────────────────────────────────────────── #}
+<div class="alert alert-error" style="margin-bottom:0.75rem;">
+  <strong>Control panel failed to launch.</strong><br>
+  {{ error }}
+</div>
+
+{% endif %}
+{# state == 'idle' or no state: render nothing #}

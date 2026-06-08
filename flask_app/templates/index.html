@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}PlatformPose{% endblock %}
+
+{% block body %}
+<div class="layout">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <div class="sidebar-header">
+      <div class="app-name">PlatformPose</div>
+      <div class="app-tagline">Settings</div>
+    </div>
+
+    <!-- Settings form — auto-saves on change via HTMX -->
+    <form id="settings-form"
+          hx-post="/api/settings"
+          hx-trigger="change delay:600ms"
+          hx-swap="none">
+
+      <!-- Project section -->
+      <div class="sidebar-section">
+        <div class="section-label">Project</div>
+
+        <div class="field">
+          <label for="project">Project name</label>
+          <input type="text" id="project" name="project"
+                 value="{{ s.project }}" placeholder="my_project">
+        </div>
+
+        <div class="field">
+          <label for="video_id">Video ID</label>
+          <input type="text" id="video_id" name="video_id"
+                 value="{{ s.video_id }}" placeholder="video_001">
+        </div>
+
+        <div class="field">
+          <label for="researcher">Researcher</label>
+          <input type="text" id="researcher" name="researcher"
+                 value="{{ s.researcher }}" placeholder="Your name">
+        </div>
+
+        <div class="field">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes"
+                    placeholder="Optional notes for this session">{{ s.notes }}</textarea>
+        </div>
+      </div>
+
+      <!-- Capture Region section -->
+      <div class="sidebar-section">
+        <div class="section-label">Capture Region</div>
+
+        <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.45;
+                  margin-bottom:0.6rem;">
+          Navigate to your video first, then click below.
+          A&nbsp;3-second countdown will give you time to switch back.
+        </p>
+
+        <button type="button" class="btn btn-outline btn-full"
+                hx-post="/api/launch-region-selector"
+                hx-target="#region-status"
+                hx-swap="innerHTML">
+          Define Region
+        </button>
+
+        <div id="region-status">
+          {% include "partials/region_status.html" %}
+        </div>
+      </div>
+
+      <!-- Analysis Settings section -->
+      <div class="sidebar-section">
+        <div class="section-label">Analysis Settings</div>
+
+        <details>
+          <summary>Pose Estimation</summary>
+          <div class="details-body">
+
+            <div class="field">
+              <div class="range-row">
+                <label for="min_visibility">Min visibility</label>
+                <span class="range-val" id="vis-val">{{ s.min_visibility }}</span>
+              </div>
+              <input type="range" id="min_visibility" name="min_visibility"
+                     min="0" max="1" step="0.05"
+                     value="{{ s.min_visibility }}"
+                     oninput="document.getElementById('vis-val').textContent=this.value">
+            </div>
+
+            <div class="field">
+              <label for="max_out_of_range">Max low-visibility keypoints</label>
+              <input type="number" id="max_out_of_range" name="max_out_of_range"
+                     min="0" max="33" value="{{ s.max_out_of_range }}">
+            </div>
+
+          </div>
+        </details>
+
+        <details>
+          <summary>Floor Estimation</summary>
+          <div class="details-body">
+
+            <div class="field">
+              <label for="floor_method">Method</label>
+              <select id="floor_method" name="floor_method">
+                <option value="Rolling Minimum"
+                  {% if s.floor_method == 'Rolling Minimum' %}selected{% endif %}>
+                  Rolling Minimum
+                </option>
+                <option value="Foot Contact Inference"
+                  {% if s.floor_method == 'Foot Contact Inference' %}selected{% endif %}>
+                  Foot Contact Inference
+                </option>
+              </select>
+            </div>
+
+            <div class="field" id="window-field"
+                 style="{% if s.floor_method == 'Foot Contact Inference' %}display:none{% endif %}">
+              <label for="window_size">Rolling window (frames)</label>
+              <input type="number" id="window_size" name="window_size"
+                     min="5" max="300" value="{{ s.window_size }}">
+            </div>
+
+          </div>
+        </details>
+
+      </div>
+      <!-- end analysis settings -->
+
+    </form>
+    <!-- end settings form -->
+
+  </aside>
+  <!-- end sidebar -->
+
+  <!-- ── Main panel ──────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="nav-links">
+        <a href="/about">About</a>
+      </div>
+      <h1>PlatformPose</h1>
+      <div class="byline">L. Archer Porter</div>
+    </div>
+
+    <!-- How to Use -->
+    <div class="section">
+      <div class="section-title">How to Use</div>
+      <ol class="how-to-use">
+        <li><span>Enter your project name and video ID in the Settings panel, then fill in optional metadata.</span></li>
+        <li><span>Click <strong>Define Region</strong> to draw a rectangle over the video player in your browser.</span></li>
+        <li><span>Navigate to the target video in another browser tab and begin playback.</span></li>
+        <li><span>Click <strong>Launch Control Panel</strong> — a floating window appears. Press Start (or Space) to begin capture.</span></li>
+        <li><span>Press Stop when the video ends. The session saves automatically and the panel closes.</span></li>
+        <li><span>Check <strong>Corpus Status</strong> below to review your accumulated data. Export to CSV when ready.</span></li>
+      </ol>
+    </div>
+
+    <hr style="border:none; border-top:1px solid #e8e8e8; margin:0 0 2rem;">
+
+    <!-- Before You Capture checklist -->
+    <div class="section">
+      <div class="section-title">Before You Capture</div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.1rem; line-height:1.6;">
+        Pose estimation quality depends entirely on what the camera sees.
+        Confirm all conditions below before starting a session.
+      </p>
+
+      <div class="cl-card">
+
+        <div class="cl-group-label">Framing &amp; movement</div>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Camera is stable and fixed</strong> — no handheld movement or zooming during playback
+          </span>
+        </label>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Full body is visible</strong> — head, torso, and feet all within frame throughout
+          </span>
+        </label>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>All limbs remain in frame</strong> for the majority of the video
+            — arms and legs going off-screen will be filtered out as low-confidence frames
+          </span>
+        </label>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Single dancer in frame</strong> — other people overlapping or in the background
+            may cause the model to track the wrong subject
+          </span>
+        </label>
+
+        <div class="cl-group-label" style="margin-top:0.85rem;">Video quality</div>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Consistent, adequate lighting</strong> — no sudden bright flashes,
+            deep shadows across the body, or severe backlighting
+          </span>
+        </label>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Video plays at 1× speed</strong> — slow-motion and time-lapse alter
+            the temporal structure of the movement data
+          </span>
+        </label>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Sufficient resolution</strong> — individual limbs are clearly
+            distinguishable; heavily compressed or pixelated video reduces landmark confidence
+          </span>
+        </label>
+
+        <div class="cl-group-label" style="margin-top:0.85rem;">Capture setup</div>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>Capture region covers only the video player</strong> — browser chrome,
+            other tabs, or desktop UI outside the player should be excluded
+          </span>
+        </label>
+
+        <label class="cl-item">
+          <input type="checkbox" class="capture-check">
+          <span class="cl-box"></span>
+          <span class="cl-text">
+            <strong>No overlays block the dancer</strong> — dismiss video player controls,
+            ads, subtitles, or any UI elements that cover the body before capturing
+          </span>
+        </label>
+
+        <div style="text-align:right; margin-top:0.5rem; padding-top:0.4rem;
+                    border-top:1px solid var(--border);">
+          <button type="button" onclick="collapseChecklist()"
+                  style="font-size:0.73rem; color:var(--text-muted); background:none;
+                         border:none; cursor:pointer; padding:0; line-height:1;">
+            Collapse anyway ›
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Status indicator — lives outside card so it stays visible when card collapses -->
+      <div id="cl-status" style="margin-top:0.85rem;"></div>
+    </div>
+
+    <hr style="border:none; border-top:1px solid #e8e8e8; margin:0 0 2rem;">
+
+    <!-- Capture Session -->
+    <div class="section">
+      <div class="section-title">Capture Session</div>
+
+      {% if not task_ok %}
+      <div class="alert alert-warning">
+        <strong>Model not found.</strong> Place <code>pose_landmarker_heavy.task</code>
+        in the project root before capturing.
+      </div>
+      {% endif %}
+
+      <div id="launch-status">
+        {% include "partials/launch_status.html" %}
+      </div>
+
+      <div id="cl-launch-warn"></div>
+
+      <button class="btn btn-success btn-full"
+              hx-post="/api/launch-control-panel"
+              hx-include="#settings-form"
+              hx-target="#launch-status"
+              hx-swap="innerHTML"
+              {% if not task_ok %}disabled{% endif %}>
+        Launch Control Panel
+      </button>
+    </div>
+
+    <hr style="border:none; border-top:1px solid #e8e8e8; margin:0 0 2rem;">
+
+    <!-- Corpus Status -->
+    <div class="section">
+      <div class="section-title">Corpus Status</div>
+
+      <div id="corpus">
+        {% include "partials/corpus.html" %}
+      </div>
+
+    </div>
+
+  </main>
+  <!-- end main panel -->
+
+</div>
+<!-- end layout -->
+
+<script>
+// ── Floor method toggle ────────────────────────────────────────────────────
+document.getElementById('floor_method').addEventListener('change', function() {
+  const wf = document.getElementById('window-field');
+  if (wf) wf.style.display = this.value === 'Foot Contact Inference' ? 'none' : '';
+});
+
+// ── Before-you-capture checklist ──────────────────────────────────────────
+(function () {
+  const checks = Array.from(document.querySelectorAll('.capture-check'));
+  const total  = checks.length;
+  const status = document.getElementById('cl-status');
+  const card   = document.querySelector('.cl-card');
+  const warn   = document.getElementById('cl-launch-warn');
+
+  let acknowledged = false;  // true when user has checked the "proceed anyway" box
+
+  // Called by the "Review ›" button — re-expands the card and resets all state
+  // so the user can review or uncheck items without an immediate re-collapse.
+  window.expandChecklist = function () {
+    acknowledged = false;
+    if (card)   card.classList.remove('cl-collapsed');
+    if (status) status.innerHTML = '';
+    if (warn)   warn.innerHTML   = '';
+  };
+
+  // Called by the "Collapse anyway ›" link — collapses the card regardless of
+  // how many items are checked, using the same acknowledged path.
+  window.collapseChecklist = function () {
+    acknowledged = true;
+    update();
+  };
+
+  function showCollapsed(label) {
+    if (card) card.classList.add('cl-collapsed');
+    if (status) status.innerHTML = `
+      <div class="cl-status-ready">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0;">
+          <circle cx="9" cy="9" r="9" fill="#48c78e"/>
+          <path d="M5 9.5l2.8 2.8 5.2-5.8" stroke="white" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        ${label}
+        <button type="button" onclick="expandChecklist()"
+                style="margin-left:auto; font-size:0.75rem; font-weight:600;
+                       color:var(--primary); background:none; border:none;
+                       cursor:pointer; padding:0; white-space:nowrap; line-height:1;">
+          Review ›
+        </button>
+      </div>`;
+    if (warn) warn.innerHTML = '';
+  }
+
+  function update() {
+    const done = checks.filter(c => c.checked).length;
+
+    if (done === total) {
+      showCollapsed('All conditions met — ready to capture');
+
+    } else if (acknowledged) {
+      showCollapsed('Conditions acknowledged — ready to capture');
+
+    } else if (done === 0) {
+      // Nothing checked yet — stay silent
+      if (card)   card.classList.remove('cl-collapsed');
+      if (status) status.innerHTML = '';
+      if (warn)   warn.innerHTML   = '';
+
+    } else {
+      // Some (but not all) items checked
+      if (card) card.classList.remove('cl-collapsed');
+      if (status) status.innerHTML = `
+        <div class="cl-status-pending">
+          <span class="cl-dot partial"></span>
+          ${done} of ${total} conditions met — almost there
+        </div>`;
+      // Warning with acknowledgement checkbox
+      if (warn) {
+        warn.innerHTML = `
+          <div class="alert alert-warning" style="margin-bottom:0.6rem; font-size:0.8rem;">
+            <strong>Not all conditions met.</strong>
+            Unchecked items may reduce pose estimation quality.
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-top:0.6rem;
+                          cursor:pointer; font-weight:600; color:#92400e;">
+              <input type="checkbox" id="cl-ack"
+                     style="width:14px; height:14px; flex-shrink:0; cursor:pointer; accent-color:#92400e;">
+              I understand — proceed anyway
+            </label>
+          </div>`;
+        document.getElementById('cl-ack').addEventListener('change', function () {
+          if (this.checked) { acknowledged = true; update(); }
+        });
+      }
+    }
+  }
+
+  // Any change to the main checklist resets the acknowledgement
+  checks.forEach(c => c.addEventListener('change', function () {
+    acknowledged = false;
+    update();
+  }));
+  update();
+})();
+</script>
+{% endblock %}

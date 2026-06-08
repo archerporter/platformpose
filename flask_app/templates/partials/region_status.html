@@ -1,0 +1,89 @@
+{% if error %}
+{# ── Launch error ────────────────────────────────────────────────────────── #}
+<div class="alert alert-error" style="margin-top:0.4rem; font-size:0.78rem;">
+  <strong>Region selector failed to start.</strong><br>
+  <code style="white-space:pre-wrap; font-size:0.72rem;">{{ error }}</code>
+</div>
+
+{% elif polling %}
+{# ── Countdown: user switches to video, screenshot fires after delay ─────── #}
+<div id="pp-region-wait"
+     hx-get="/api/region-status?pid={{ pid }}&mtime_before={{ mtime_before }}"
+     hx-trigger="every 500ms"
+     hx-swap="outerHTML"
+     style="margin-top:0.6rem;">
+
+  <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.35rem;">
+    <span id="pp-count"
+          style="display:inline-flex; align-items:center; justify-content:center;
+                 width:2rem; height:2rem; border-radius:50%;
+                 background:var(--primary); color:#fff;
+                 font-size:1rem; font-weight:700; flex-shrink:0;">
+      {{ countdown }}
+    </span>
+    <span style="font-size:0.82rem; font-weight:600; color:var(--text-sidebar);"
+          id="pp-msg">Switch to your video now</span>
+  </div>
+
+  <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.5;
+              padding-left:2.75rem;">
+    Keep the video player visible. The selection overlay will appear automatically.
+  </div>
+
+  <script>
+  (function () {
+    var n   = {{ countdown }};
+    var cnt = document.getElementById('pp-count');
+    var msg = document.getElementById('pp-msg');
+    if (!cnt) return;
+    var t = setInterval(function () {
+      n--;
+      if (n <= 0) {
+        clearInterval(t);
+        cnt.textContent    = '…';
+        cnt.style.fontSize = '0.7rem';
+        msg.textContent    = 'Taking screenshot — switch back when done';
+      } else {
+        cnt.textContent = n;
+      }
+    }, 1000);
+  })();
+  </script>
+</div>
+
+{% elif just_captured and region %}
+{# ── Success: region was just captured this session ───────────────────────── #}
+<div style="margin-top:0.55rem;">
+  <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.4rem;">
+    <span style="display:inline-flex; align-items:center; justify-content:center;
+                 width:1.1rem; height:1.1rem; border-radius:50%;
+                 background:var(--success); flex-shrink:0;">
+      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+        <path d="M1 3l2 2 4-4" stroke="white" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <span style="font-size:0.78rem; font-weight:600;
+                 color:#065f46;">Capture region saved</span>
+  </div>
+  <div class="region-preview">
+    {{ region.width }}&thinsp;&times;&thinsp;{{ region.height }}
+    <span style="color:var(--text-muted); margin:0 0.2rem;">at</span>
+    ({{ region.left }},&thinsp;{{ region.top }})
+  </div>
+</div>
+
+{% elif region %}
+{# ── Region loaded from previous session ─────────────────────────────────── #}
+<div class="region-preview" style="margin-top:0.4rem;">
+  {{ region.width }}&thinsp;&times;&thinsp;{{ region.height }}
+  <span style="color:var(--text-muted); margin:0 0.2rem;">at</span>
+  ({{ region.left }},&thinsp;{{ region.top }})
+</div>
+
+{% else %}
+{# ── No region yet ────────────────────────────────────────────────────────── #}
+<div class="region-preview" style="margin-top:0.4rem; color:var(--text-muted);">
+  No region defined yet
+</div>
+{% endif %}

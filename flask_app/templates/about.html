@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}About — PlatformPose{% endblock %}
+
+{% block body %}
+<div class="about-wrap">
+
+  <!-- Back nav -->
+  <p style="margin-bottom:1.5rem; font-size:0.85rem;">
+    <a href="/">&larr; Back to PlatformPose</a>
+  </p>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1>About PlatformPose</h1>
+    <div class="byline">L. Archer Porter</div>
+  </div>
+
+  <h2>Overview</h2>
+  <p>
+    PlatformPose is an open-source screen-capture pose estimation tool designed
+    for researchers studying social media dance videos. It uses MediaPipe's Pose
+    Landmarker model to extract body keypoint data from screen recordings, without
+    requiring direct API access to the platforms on which videos are hosted.
+  </p>
+  <p style="margin-top:0.6rem;">
+    The tool produces a structured corpus of pose landmarks — one row per
+    accepted frame, across as many videos as a researcher captures — stored in
+    a portable SQLite database and exportable as CSV for downstream movement
+    analysis, visualization, or machine learning workflows.
+  </p>
+
+  <h2>Research Context</h2>
+  <p>
+    PlatformPose was developed in response to the progressive contraction of
+    social media data access for academic researchers — what has been termed the
+    <em>post-API research landscape</em>. Commercial platforms have increasingly
+    restricted or eliminated research-grade data access, creating methodological
+    challenges for scholars working with digital cultural materials at scale.
+  </p>
+  <p style="margin-top:0.6rem;">
+    The tool addresses this constraint by operating at the screen level. Rather
+    than retrieving video files or metadata through a platform API, it captures
+    what is visible during normal playback in a browser. This approach is
+    platform-agnostic: it works with any video that can be played in a browser
+    window, regardless of where it is hosted.
+  </p>
+
+  <h2>How It Works</h2>
+  <ol>
+    <li><strong>Define a capture region.</strong> The researcher draws a rectangle
+      over the video player using the region selector tool. Coordinates are saved
+      and applied to subsequent captures.</li>
+    <li><strong>Launch the control panel.</strong> A small floating window appears
+      on screen. The researcher navigates to the target video in another tab and
+      begins playback.</li>
+    <li><strong>Capture.</strong> Pressing Start triggers a loop that screenshots
+      the capture region at each iteration, runs MediaPipe pose detection on the
+      frame, and records the 33 body landmarks if the pose is sufficiently
+      visible.</li>
+    <li><strong>Filter.</strong> Frames where too many keypoints fall below the
+      visibility threshold are discarded, reducing noise from occlusion or blur.</li>
+    <li><strong>Floor estimation.</strong> A floor reference position is computed
+      from the ankle landmarks using either a rolling minimum or a foot-contact
+      inference method.</li>
+    <li><strong>Corpus output.</strong> Accepted frames are appended to a
+      project-level SQLite database, enabling comparison across videos from a
+      single project.</li>
+  </ol>
+
+  <h2>Technical Specifications</h2>
+  <table class="about-table">
+    <tr><th>Component</th><th>Details</th></tr>
+    <tr><td>Pose model</td><td>MediaPipe Pose Landmarker — Heavy variant</td></tr>
+    <tr><td>Keypoints</td><td>33 landmarks (COCO-compatible body topology)</td></tr>
+    <tr><td>Coordinates</td><td>Normalized x / y / z + per-landmark visibility score</td></tr>
+    <tr><td>Corpus storage</td><td>SQLite (exportable to CSV on demand)</td></tr>
+    <tr><td>Screen capture</td><td>PyAutoGUI (macOS requires Screen Recording permission)</td></tr>
+    <tr><td>Interface</td><td>Flask + HTMX web app + tkinter floating control panel</td></tr>
+  </table>
+
+  <h2>Author</h2>
+  <p>
+    <strong>L. Archer Porter</strong> is a researcher working at the intersection
+    of digital humanities, performance studies, and computational movement
+    analysis. PlatformPose was developed as part of ongoing research into
+    vernacular dance archives and the methodological challenges of studying
+    ephemeral digital culture in a post-API era.
+  </p>
+
+  <hr>
+
+  <p>
+    <em>PlatformPose is open-source software. Source code and full documentation
+    will be made publicly available upon publication.</em>
+  </p>
+
+</div>
+{% endblock %}

@@ -1,0 +1,248 @@
+{% if not db_exists %}
+<div class="empty-state">
+  No corpus found for <strong>{{ project }}</strong>. Complete a capture session to create one.
+</div>
+
+{% elif summary %}
+
+{# ── Latest-capture preview card ─────────────────────────────────────────── #}
+<div style="display:flex; align-items:flex-start; gap:1rem;
+            background:#f8fafc; border:1px solid #e5e7eb;
+            border-radius:10px; padding:0.85rem 1rem;
+            margin-bottom:1rem;">
+
+  {# Mini skeleton canvas #}
+  <div style="position:relative; flex-shrink:0; border-radius:7px;
+              overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.25);">
+    <canvas id="pp-preview"
+            width="120" height="213"
+            data-project="{{ project }}"
+            data-video="{{ summary[0].video_id }}"
+            style="display:block; background:#111827;"></canvas>
+    <div id="pp-preview-load"
+         style="position:absolute; inset:0; background:#111827;
+                display:flex; align-items:center; justify-content:center;">
+      <span class="spinner"></span>
+    </div>
+  </div>
+
+  {# Stats #}
+  <div style="display:flex; flex-direction:column; gap:0.25rem; min-width:0;">
+    <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase;
+                letter-spacing:0.07em; color:#9ca3af; margin-bottom:0.1rem;">
+      Latest capture
+    </div>
+    <div style="font-size:0.95rem; font-weight:700; color:#111;
+                letter-spacing:-0.01em; overflow:hidden; text-overflow:ellipsis;
+                white-space:nowrap;">
+      {{ summary[0].video_id }}
+    </div>
+    <div style="font-size:0.8rem; color:#374151;">
+      {{ summary[0].frames }} frame{% if summary[0].frames != 1 %}s{% endif %}
+      &thinsp;·&thinsp;
+      {{ summary[0].duration_s or '—' }}s
+    </div>
+    {% if summary[0].retention_pct is not none %}
+    {% set rp0 = summary[0].retention_pct %}
+    {% if rp0 >= 75 %}{% set rc0 = '#dcfce7' %}{% set rt0 = '#14532d' %}
+    {% elif rp0 >= 50 %}{% set rc0 = '#fef9c3' %}{% set rt0 = '#854d0e' %}
+    {% else %}{% set rc0 = '#fee2e2' %}{% set rt0 = '#7f1d1d' %}{% endif %}
+    <div style="font-size:0.74rem; color:#9ca3af;">
+      <span style="display:inline-flex; align-items:center; gap:0.25rem;
+                   padding:0.14rem 0.42rem; border-radius:999px;
+                   background:{{ rc0 }}; color:{{ rt0 }};
+                   font-size:0.7rem; font-weight:700;">
+        {{ rp0 }}% retained
+      </span>
+    </div>
+    {% endif %}
+    <div style="font-size:0.74rem; color:#9ca3af;">
+      {{ summary[0].first_seen or '' }}
+    </div>
+    <a href="/visualize?project={{ project }}&video_id={{ summary[0].video_id }}"
+       style="font-size:0.78rem; font-weight:600; color:var(--primary);
+              margin-top:0.35rem; display:inline-flex; align-items:center; gap:0.2rem;">
+      View full visualization ›
+    </a>
+  </div>
+</div>
+
+{# ── Corpus summary ───────────────────────────────────────────────────────── #}
+<div class="corpus-meta">
+  <span class="corpus-total">
+    {{ n_frames }} total frame{% if n_frames != 1 %}s{% endif %}
+    across {{ summary|length }} video{% if summary|length != 1 %}s{% endif %}
+  </span>
+  <span class="badge badge-green">● Active</span>
+</div>
+
+<table class="corpus-table">
+  <thead>
+    <tr>
+      <th>Video ID</th>
+      <th>Frames</th>
+      <th>Duration (s)</th>
+      <th>Retention</th>
+      <th>First captured</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in summary %}
+    {% set rp = row.retention_pct %}
+    {% if rp is not none %}
+      {% if rp >= 75 %}{% set rc = '#dcfce7' %}{% set rt = '#14532d' %}
+      {% elif rp >= 50 %}{% set rc = '#fef9c3' %}{% set rt = '#854d0e' %}
+      {% else %}{% set rc = '#fee2e2' %}{% set rt = '#7f1d1d' %}{% endif %}
+    {% endif %}
+    <tr>
+      <td>{{ row.video_id }}</td>
+      <td>{{ row.frames }}</td>
+      <td>{{ row.duration_s or '—' }}</td>
+      <td>
+        {% if rp is not none %}
+        <span style="display:inline-flex; align-items:center;
+                     padding:0.18rem 0.5rem; border-radius:999px;
+                     background:{{ rc }}; color:{{ rt }};
+                     font-size:0.72rem; font-weight:700; white-space:nowrap;">
+          {{ rp }}%
+        </span>
+        {% else %}—{% endif %}
+      </td>
+      <td style="font-size:0.75rem; color:var(--text-muted);">{{ row.first_seen or '—' }}</td>
+      <td>
+        <a href="/visualize?project={{ project }}&video_id={{ row.video_id }}"
+           style="font-size:0.75rem; font-weight:600; color:var(--primary);
+                  white-space:nowrap;">View ›</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% else %}
+<div class="empty-state">
+  Database exists but contains no frames yet.
+</div>
+{% endif %}
+
+<div style="display:flex; gap:0.6rem; margin-top:0.75rem; flex-wrap:wrap;">
+  <button class="btn btn-outline btn-sm"
+          hx-get="/api/corpus?project={{ project }}"
+          hx-target="#corpus"
+          hx-swap="innerHTML">
+    Refresh
+  </button>
+  {% if db_exists %}
+  <a class="btn btn-outline btn-sm"
+     href="/api/export-csv?project={{ project }}">
+    Export CSV
+  </a>
+  {% endif %}
+</div>
+
+{# ── Preview animation (self-contained IIFE, cleans up on DOM removal) ────── #}
+{% if summary %}
+<script>
+(function () {
+  const canvas = document.getElementById('pp-preview');
+  if (!canvas) return;
+  const ctx    = canvas.getContext('2d');
+  const loader = document.getElementById('pp-preview-load');
+
+  // Major-limb connections only — cleaner at small canvas size
+  const SEGS = {
+    center: [[11,12],[11,23],[12,24],[23,24]],            // torso box
+    left:   [[11,13],[13,15],[23,25],[25,27],[27,29],[27,31]],  // left arm + leg
+    right:  [[12,14],[14,16],[24,26],[26,28],[28,30],[28,32]],  // right arm + leg
+  };
+  const CLR = {
+    center: [156,163,175], left: [96,165,250], right: [248,113,113],
+  };
+  const LEFT_LMS  = new Set([1,2,3,7,9,11,13,15,17,19,21,23,25,27,29,31]);
+  const RIGHT_LMS = new Set([4,5,6,8,10,12,14,16,18,20,22,24,26,28,30,32]);
+
+  let frames = [], rafId = null;
+  let startWall = null, duration = 0;
+
+  function draw(idx) {
+    const f = frames[idx], W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(0, 0, W, H);
+    ctx.lineWidth = 1.5;
+    for (const [side, pairs] of Object.entries(SEGS)) {
+      const [r,g,b] = CLR[side];
+      for (const [ai,bi] of pairs) {
+        const la = f.lms[ai], lb = f.lms[bi];
+        const al = Math.min(la[3], lb[3]) * 0.85;
+        if (al < 0.04) continue;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${al.toFixed(2)})`;
+        ctx.beginPath();
+        ctx.moveTo(la[0]*W, la[1]*H);
+        ctx.lineTo(lb[0]*W, lb[1]*H);
+        ctx.stroke();
+      }
+    }
+    // Head circle at nose landmark
+    const nose = f.lms[0];
+    if (nose[3] > 0.1) {                                         // vis at [3]
+      ctx.strokeStyle = `rgba(156,163,175,${(nose[3]*0.7).toFixed(2)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(nose[0]*W, nose[1]*H, W * 0.055, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // Joints (body only, skip face clutter)
+    for (let i = 11; i <= 32; i++) {
+      const lm = f.lms[i];
+      if (lm[3] < 0.05) continue;                               // vis at [3]
+      const [r,g,b] = LEFT_LMS.has(i) ? CLR.left : CLR.right;
+      ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(lm[3]+0.15,1).toFixed(2)})`;
+      ctx.beginPath();
+      ctx.arc(lm[0]*W, lm[1]*H, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function getFrameAt(t) {
+    let lo = 0, hi = frames.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (frames[mid].t <= t) lo = mid; else hi = mid - 1;
+    }
+    return lo;
+  }
+
+  function tick(now) {
+    if (!canvas.isConnected) { cancelAnimationFrame(rafId); return; }
+    if (startWall === null) startWall = now;
+    const t = ((now - startWall) / 1000) % duration;
+    draw(getFrameAt(t));
+    rafId = requestAnimationFrame(tick);
+  }
+
+  const project = canvas.dataset.project;
+  const videoId = canvas.dataset.video;
+
+  fetch('/api/frames?project=' + encodeURIComponent(project)
+                  + '&video_id=' + encodeURIComponent(videoId))
+    .then(r => r.json())
+    .then(data => {
+      frames   = data.frames;
+      duration = data.duration_s || 1;
+      // Resize canvas to capture region aspect ratio
+      const ar    = data.region_height / data.region_width;
+      canvas.width  = 120;
+      canvas.height = Math.round(120 * ar);
+      if (loader) loader.style.display = 'none';
+      rafId = requestAnimationFrame(tick);
+    })
+    .catch(() => {
+      if (loader) {
+        loader.style.background = 'transparent';
+        loader.innerHTML = '<span style="color:#f87171;font-size:0.7rem;">Failed</span>';
+      }
+    });
+})();
+</script>
+{% endif %}
