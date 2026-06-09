@@ -460,7 +460,7 @@ def api_frames():
     out_of_frame_rate = round(100.0 - retention_rate, 1)
 
     # Z range across body landmarks (11-32, skip noisy face points) for
-    # normalising the depth encoding in the visualiser.
+    # normalizing the depth encoding in the visualizer.
     z_vals = []
     for row in rows:
         for i in range(11, 33):
@@ -515,7 +515,7 @@ def api_export_csv():
 
 # ── API: export skeleton video ─────────────────────────────────────────────────
 
-# Segment pairs and colours mirror the JS visualizer exactly.
+# Segment pairs and colors mirror the JS visualizer exactly.
 _VID_SEGS = {
     'center': [(0,1),(1,2),(2,3),(3,7),(0,4),(4,5),(5,6),(6,8),(9,10),(11,12),(23,24)],
     'left':   [(11,13),(13,15),(15,17),(15,19),(15,21),(17,19),
@@ -538,7 +538,7 @@ _VID_LM_SIDE = [
 
 
 def _vid_blend(color_bgr, alpha):
-    """Pre-blend a BGR colour against the video background at the given alpha."""
+    """Pre-blend a BGR color against the video background at the given alpha."""
     return tuple(int(alpha * c + (1.0 - alpha) * b)
                  for c, b in zip(color_bgr, _VID_BG))
 
