@@ -46,9 +46,9 @@ sock_dance_pipeline_v1.ipynb
 
 # ── Streamlit (legacy — superseded by Flask app) ──────────────────────────────
 .streamlit/
-platformpose.py
-control_panel.py
-pages/
+/platformpose.py
+/control_panel.py
+/pages/
 
 # ── Claude Code local settings ─────────────────────────────────────────────────
 .claude/
