@@ -21,6 +21,16 @@ import pandas as pd
 _HERE        = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(_HERE)
 
+
+def _ensure_x11():
+    """Force XWayland when running under a Wayland compositor."""
+    if sys.platform != 'linux':
+        return
+    if not (os.environ.get('WAYLAND_DISPLAY') or
+            os.environ.get('XDG_SESSION_TYPE', '').lower() == 'wayland'):
+        return
+    os.environ.setdefault('DISPLAY', ':0')
+
 READY, RECORDING, SAVING, DONE, ERROR = 'READY', 'RECORDING', 'SAVING', 'DONE', 'ERROR'
 
 LOG_FILE = os.path.join(_HERE, 'control_panel.log')
@@ -38,6 +48,7 @@ def _log(msg: str):
 
 
 def main():
+    _ensure_x11()
     if len(sys.argv) < 2:
         print('Usage: control_panel.py <settings.json>', file=sys.stderr)
         sys.exit(1)

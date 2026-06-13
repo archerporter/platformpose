@@ -9,6 +9,18 @@ import cv2
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
+
+def _ensure_x11():
+    """Force XWayland when running under a Wayland compositor."""
+    if sys.platform != 'linux':
+        return
+    if not (os.environ.get('WAYLAND_DISPLAY') or
+            os.environ.get('XDG_SESSION_TYPE', '').lower() == 'wayland'):
+        return
+    os.environ.setdefault('DISPLAY', ':0')
+    os.environ['SDL_VIDEODRIVER'] = 'x11'
+
+
 # ── Design tokens (match Flask app) ───────────────────────────────────────────
 WHITE      = (255, 255, 255)
 PRIMARY    = (37,  99,  235)   # #2563eb
@@ -31,6 +43,7 @@ def run_selector(initial_left=None, initial_top=None,
     The caller (Flask) shows a matching countdown in the browser so the user
     has time to switch to their video before the screenshot fires.
     """
+    _ensure_x11()
     # Get screen size via pyautogui — no pygame needed yet
     screen_w, screen_h = pyautogui.size()
 

@@ -255,7 +255,8 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 - The app automatically brings the control panel window to the front using AppleScript.
 
 **Linux**
-- Screen Recording permissions are not required. PyAutoGUI should work with X11; Wayland support varies.
+- Screen Recording permissions are not required.
+- **Wayland** is supported. PlatformPose detects Wayland automatically and redirects the region selector and capture pipeline to XWayland. XWayland must be installed (it is included by default on most distributions).
 - The AppleScript window-focus step is silently skipped.
 
 **Windows**
