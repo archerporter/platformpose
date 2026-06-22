@@ -3,5 +3,5 @@ mediapipe>=0.10
 numpy>=2.0
 pandas>=2.0
 PyAutoGUI>=0.9.54
-pygame>=2.6
+pygame-ce>=2.5.7
 opencv-contrib-python>=4.10

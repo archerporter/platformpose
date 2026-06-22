@@ -257,6 +257,7 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 **Linux**
 - Screen Recording permissions are not required.
 - **Wayland** is supported. PlatformPose detects Wayland automatically and redirects the region selector and capture pipeline to XWayland. XWayland must be installed (it is included by default on most distributions).
+- If using **X11**, GNOME Screenshot and XDG Desktop Portal must be installed.
 - The AppleScript window-focus step is silently skipped.
 
 **Windows**
