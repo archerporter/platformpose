@@ -117,7 +117,7 @@ Settings auto-save when you change any field.
 
 Settings can be loaded at startup from `flask_app/settings.json`.  See `flask_app/settings-example.json` for an example file listing the default settings.  Any settings not specified in `settings.json` will be assigned the default values.
 
-See [Settings Reference](##settings-reference) for a complete list of options.
+See [Settings Reference](#settings-reference) for a complete list of options.
 
 ### Step 2 — Define the capture region
 
