@@ -115,6 +115,10 @@ In the **Settings** sidebar, enter:
 
 Settings auto-save when you change any field.
 
+Settings can be loaded at startup from `flask_app/settings.json`.  See `flask_app/settings-example.json` for an example file listing the default settings.  Any settings not specified in `settings.json` will be assigned the default values.
+
+See [Settings Reference](##settings-reference) for a complete list of options.
+
 ### Step 2 — Define the capture region
 
 Click **Define Region**. After a 3-second countdown (giving you time to switch windows), a region selector appears as an overlay over your screen. Drag the highlighted rectangle to cover the video player precisely, then press **Enter** or **Space** to confirm.
@@ -255,9 +259,9 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 - The app automatically brings the control panel window to the front using AppleScript.
 
 **Linux**
+- **X11** is supported. XDG Desktop Portal must be installed with one or more backends.  scrot must also be installed.
+- **Wayland** is not currently supported. <!-- PlatformPose detects Wayland automatically and redirects the region selector and capture pipeline to XWayland. XWayland must be installed (it is included by default on most distributions). -->
 - Screen Recording permissions are not required.
-- **Wayland** is supported. PlatformPose detects Wayland automatically and redirects the region selector and capture pipeline to XWayland. XWayland must be installed (it is included by default on most distributions).
-- If using **X11**, GNOME Screenshot and XDG Desktop Portal must be installed.
 - The AppleScript window-focus step is silently skipped.
 
 **Windows**

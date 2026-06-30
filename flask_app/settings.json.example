@@ -1,0 +1,14 @@
+{
+    "project":         "my_project",
+    "video_id":        "video_001",
+    "researcher":      "",
+    "notes":           "",
+    "min_visibility":  0.5,
+    "max_out_of_range": 5,
+    "floor_method":    "Rolling Minimum",
+    "window_size":     30,
+    "left":   0,
+    "top":    0,
+    "width":  800,
+    "height": 600
+}
