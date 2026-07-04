@@ -685,31 +685,35 @@ def api_export_video():
 def _free_port(port: int):
     """
     Kill any process bound to *port*, then wait until the socket is actually
-    released before returning.  SIGTERM is too slow on macOS — use SIGKILL and
-    poll until a connect attempt is refused (up to 3 s).
+    released before returning.  On MacOS, poll untill connection is refused 
+    (up to 3 s).
     """
-    import psutil, signal, socket, time
+    import psutil, socket, time
 
-    # Find and kill any occupying processes
-    result = psutil.net_connections(kind='tcp')
-    pids = []
-    if(len(result) > 0):
-        for t in result:
-            if(t[3][1] == port):
-                print(f'Process {t[-1]} is using port {port}')
-                pids.append(t[-1])
-        print(pids)
-    else:
-        return    #nothing was running
+    # Find any occupying processes
+    procs = []
+    known_pids = set()
+    for conn in psutil.net_connections(kind='inet'):
+        # Addresses and pids can be "None"
+        if conn.laddr and conn.pid and conn.laddr.port == port:
+            if conn.pid in known_pids:
+                continue
+            known_pids.add(conn.pid)
+            try:
+                procs.append(psutil.Process(conn.pid))
+            except psutil.NoSuchProcess:
+                pass
 
-    for pid in pids:
-        try:
-            os.kill(pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+    if not procs:
+        return # nothing was running
 
-    if not pids:
-        return   # nothing was running
+    # kill those processes
+    for p in procs:
+        p.kill()
+
+    gone, alive = psutil.wait_procs(procs, timeout=1)
+    for p in alive:
+        p.kill()
 
     # Poll until the port is actually free (macOS can hold sockets briefly)
     deadline = time.time() + 3.0
