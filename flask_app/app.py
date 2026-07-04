@@ -688,15 +688,19 @@ def _free_port(port: int):
     released before returning.  SIGTERM is too slow on macOS — use SIGKILL and
     poll until a connect attempt is refused (up to 3 s).
     """
-    import signal, socket, time, subprocess as _sp
+    import psutil, signal, socket, time
 
     # Find and kill any occupying processes
-    try:
-        result = _sp.run(['lsof', '-ti', f':{port}'],
-                         capture_output=True, text=True)
-        pids = [int(p) for p in result.stdout.split() if p.strip()]
-    except Exception:
-        pids = []
+    result = psutil.net_connections(kind='tcp')
+    pids = []
+    if(len(result) > 0):
+        for t in result:
+            if(t[3][1] == port):
+                print(f'Process {t[-1]} is using port {port}')
+                pids.append(t[-1])
+        print(pids)
+    else:
+        return    #nothing was running
 
     for pid in pids:
         try:

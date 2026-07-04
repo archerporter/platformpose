@@ -61,8 +61,9 @@ mediapipe==0.10.35
 numpy==2.4.6
 pandas==3.0.3
 PyAutoGUI==0.9.54
-pygame==2.6.1
+pygame-ce==2.5.7
 opencv-contrib-python==4.13.0.92
+psutil==7.2.2
 ```
 </details>
 
