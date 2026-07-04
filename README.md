@@ -267,7 +267,6 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Windows**
 - PyAutoGUI works on Windows. The tkinter control panel requires no changes.
-- The `lsof`-based port-clearing logic in `app.py` will not run; if port 5050 is in use you will need to free it manually.
 
 ---
 

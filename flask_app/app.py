@@ -694,7 +694,7 @@ def _free_port(port: int):
     procs = []
     known_pids = set()
     for conn in psutil.net_connections(kind='inet'):
-        # Addresses and pids can be "None"
+        # Ignore addresses and pids named "None"
         if conn.laddr and conn.pid and conn.laddr.port == port:
             if conn.pid in known_pids:
                 continue
@@ -707,7 +707,7 @@ def _free_port(port: int):
     if not procs:
         return # nothing was running
 
-    # kill those processes
+    # kill occupying processes
     for p in procs:
         p.kill()
 
@@ -727,7 +727,11 @@ def _free_port(port: int):
 
 
 if __name__ == '__main__':
-    PORT = 5050
+
+    if(sys.platform == "win32"): 
+        PORT = 5051
+    else:
+        PORT = 5050
 
     if '--_server-mode' in sys.argv:
         # Background child — just run Flask
