@@ -3,6 +3,7 @@ PlatformPose — Flask + HTMX + SQLite server
 Run:  python flask_app/app.py
 """
 import os
+from dotenv import load_dotenv
 import sys
 import json
 import sqlite3
@@ -26,6 +27,7 @@ TASK_FILE     = os.path.join(PROJECT_ROOT, 'pose_landmarker_heavy.task')
 REGION_SELECTOR = os.path.join(PROJECT_ROOT, 'region_selector.py')
 REGION_RESULT   = os.path.join(PROJECT_ROOT, 'region_result.json')
 CONTROL_PANEL   = os.path.join(_HERE, 'control_panel.py')
+
 
 app = Flask(__name__)
 
@@ -727,11 +729,8 @@ def _free_port(port: int):
 
 
 if __name__ == '__main__':
-
-    if(sys.platform == "win32"): 
-        PORT = 5051
-    else:
-        PORT = 5050
+    load_dotenv()
+    PORT = os.getenv("PP_PORT", 5050)
 
     if '--_server-mode' in sys.argv:
         # Background child — just run Flask

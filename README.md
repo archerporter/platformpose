@@ -223,6 +223,13 @@ Landmark indices follow MediaPipe's [Pose Landmarker topology](https://ai.google
 
 ---
 
+## Environment Variables
+| Variable | Default | Description |
+|---|---|---|
+| PP_PORT | 5050 | Port to which PlatformPose is bound |
+
+---
+
 ## Project Structure
 
 ```
@@ -267,7 +274,7 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Windows**
 - PyAutoGUI works on Windows. The tkinter control panel requires no changes.
-
+- Windows has been observed to run `svchost.exe`, an essential system process, on port 5050.  You may set an alternate port for PlatformPose to use in `.env`.  If using in conjunction with [Figure and Frame](https://github.com/archerporter/figure-frame), be sure to set `PP_URL` and `FF_PORT` accordingly in that program's `.env` file.
 ---
 
 ## Companion Tool: Figure and Frame
