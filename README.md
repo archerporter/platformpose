@@ -302,7 +302,7 @@ The initial research application is the movement analysis of social media dance 
 ## Author
 
 **L. Archer Porter**  
-Researcher working at the intersection of digital humanities, performance studies, and computational movement analysis.
+Researcher working at the intersection of digital humanities, dance studies, and social media studies.
 
 ---
 
