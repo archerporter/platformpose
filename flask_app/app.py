@@ -682,6 +682,8 @@ def api_export_video():
         mimetype='video/mp4',
     )
 
+def on_terminate(proc):
+    print(f'Process {proc} terminated')
 
 # ── Launch ─────────────────────────────────────────────────────────────────────
 def _free_port(port: int):
@@ -707,13 +709,12 @@ def _free_port(port: int):
                 pass
 
     if not procs:
-        return # nothing was running
+        return
 
-    # kill occupying processes
     for p in procs:
-        p.kill()
+        p.terminate()
 
-    gone, alive = psutil.wait_procs(procs, timeout=1)
+    gone, alive = psutil.wait_procs(procs, timeout=1, callback=on_terminate)
     for p in alive:
         p.kill()
 
