@@ -712,8 +712,17 @@ def _free_port(port: int):
         return
 
     for p in procs:
-        p.terminate()
+        children = psutil.Process().children(recursive=True)
+        for c in children:
+            try:
+                c.terminate()
+            except psutil.NoSuchProcess:
+                pass
+        gone, alive = psutil.wait_procs(procs, timeout=1, callback=on_terminate)
+        for c in alive:
+            c.kill()
 
+        p.terminate()
     gone, alive = psutil.wait_procs(procs, timeout=1, callback=on_terminate)
     for p in alive:
         p.kill()

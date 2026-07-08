@@ -64,6 +64,7 @@ PyAutoGUI==0.9.54
 pygame-ce==2.5.7
 opencv-contrib-python==4.13.0.92
 psutil==7.2.2
+python-dotenv==1.2.2
 ```
 </details>
 
@@ -274,7 +275,7 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Windows**
 - PyAutoGUI works on Windows. The tkinter control panel requires no changes.
-- Windows has been observed to run `svchost.exe`, an essential system process, on port 5050.  You may set an alternate port for PlatformPose to use in `.env`.  If using in conjunction with [Figure and Frame](https://github.com/archerporter/figure-frame), be sure to set `PP_URL` and `FF_PORT` accordingly in that program's `.env` file.
+- Windows requires 
 ---
 
 ## Companion Tool: Figure and Frame
