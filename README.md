@@ -275,7 +275,7 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Windows**
 - PyAutoGUI works on Windows. The tkinter control panel requires no changes.
-- On Windows, PlatformPose must be run with administrator privileges.
+- On Windows, PlatformPose must be run as an administrator in order to kill previous instances of itself.
 ---
 
 ## Companion Tool: Figure and Frame
