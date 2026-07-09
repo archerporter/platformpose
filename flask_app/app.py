@@ -2,7 +2,7 @@
 PlatformPose — Flask + HTMX + SQLite server
 Run:  python flask_app/app.py
 """
-import os, platform, pyuac
+import os, platform
 from dotenv import load_dotenv
 import psutil, socket, time
 import sys
@@ -752,6 +752,7 @@ def _free_port(port: int):
 
 if __name__ == '__main__':
     if platform.system() == 'Windows': 
+        import pyuac
         if not pyuac.isUserAdmin():
             print("Re-launching as administrator")
             pyuac.runAsAdmin()
