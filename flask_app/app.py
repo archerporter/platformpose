@@ -2,10 +2,9 @@
 PlatformPose — Flask + HTMX + SQLite server
 Run:  python flask_app/app.py
 """
-import os
+import os, platform
 from dotenv import load_dotenv
 import psutil, socket, time
-import pyuac
 import sys
 import json
 import sqlite3
@@ -689,7 +688,7 @@ def find_procs(k, port):
     known_pids = set()
     for conn in psutil.net_connections(kind=k):
         # Ignore addresses and pids named "None"
-        if conn.laddr and conn.pid and conn.laddr.port == port:
+        if conn.laddr and conn.pid and str(port) in str(conn.laddr):
             if conn.pid in known_pids:
                 continue
             known_pids.add(conn.pid)
@@ -718,7 +717,7 @@ def _free_port(port: int):
     if not procs:
         return
 
-    # and their children
+    # Find those processes' children
     for p in procs:
         try:
             children = p.children(recursive=True)
@@ -751,30 +750,31 @@ def _free_port(port: int):
 
     raise TimeoutError(f"Port {port} did not clear within 3 seconds.")
 
-
 if __name__ == '__main__':
-    if not pyuac.isUserAdmin():
-        print("Re-launching as administrator")
-        pyuac.runAsAdmin()
-    else:
-        load_dotenv()
-        PORT = int(os.getenv("PP_PORT", 5050))
+    if platform.system == 'Windows': 
+        import pyuac
+        if not pyuac.isUserAdmin():
+            print("Re-launching as administrator")
+            pyuac.runAsAdmin()
 
-        if '--_server-mode' in sys.argv:
-            # Background child — just run Flask
-            app.run(host='127.0.0.1', port=PORT, debug=False)
-        else:
-            # Launcher: free port, spawn detached child, open browser, exit
-            _free_port(PORT)
-            log_path = os.path.join(_HERE, 'server.log')
-            with open(log_path, 'w') as _log:
-                child = subprocess.Popen(
-                    [sys.executable, os.path.abspath(__file__), '--_server-mode'],
-                    stdout=_log,
-                    stderr=_log,
-                    start_new_session=True,
-                )
-            print(f'PlatformPose running at http://localhost:{PORT}  (PID {child.pid})')
-            print(f'Logs: {log_path}')
-            time.sleep(0.9)
-            webbrowser.open(f'http://localhost:{PORT}')
+    load_dotenv()
+    PORT = int(os.getenv("PP_PORT", 5050))
+
+    if '--_server-mode' in sys.argv:
+        # Background child — just run Flask
+        app.run(host='127.0.0.1', port=PORT, debug=False)
+    else:
+        # Launcher: free port, spawn detached child, open browser, exit
+        _free_port(PORT)
+        log_path = os.path.join(_HERE, 'server.log')
+        with open(log_path, 'w') as _log:
+            child = subprocess.Popen(
+                [sys.executable, os.path.abspath(__file__), '--_server-mode'],
+                stdout=_log,
+                stderr=_log,
+                start_new_session=True,
+            )
+        print(f'PlatformPose running at http://localhost:{PORT}  (PID {child.pid})')
+        print(f'Logs: {log_path}')
+        time.sleep(0.9)
+        webbrowser.open(f'http://localhost:{PORT}')
