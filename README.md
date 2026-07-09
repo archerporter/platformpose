@@ -65,6 +65,9 @@ pygame-ce==2.5.7
 opencv-contrib-python==4.13.0.92
 psutil==7.2.2
 python-dotenv==1.2.2
+# Below only if using Windows
+pyuac>=0.0.3
+pywin32>=312
 ```
 </details>
 
@@ -275,7 +278,7 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Windows**
 - PyAutoGUI works on Windows. The tkinter control panel requires no changes.
-- On Windows, PlatformPose must be run with administrator privileges.
+- On Windows, PlatformPose must be run with administrator privileges in order to kill existing instances of itself on `PP_PORT`.
 ---
 
 ## Companion Tool: Figure and Frame

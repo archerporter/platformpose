@@ -687,7 +687,7 @@ def find_procs(k, port):
     procs = []
     known_pids = set()
     for conn in psutil.net_connections(kind=k):
-        # Ignore addresses and pids named "None"
+        # First two conditions ignore addresses and pids named "None"
         if conn.laddr and conn.pid and str(port) in str(conn.laddr):
             if conn.pid in known_pids:
                 continue
@@ -711,13 +711,11 @@ def _free_port(port: int):
     (up to 3 s).
     """
 
-    # Find any processes bound to port
     procs = []
     procs.extend(find_procs('all', port))
     if not procs:
         return
 
-    # Find those processes' children
     for p in procs:
         try:
             children = p.children(recursive=True)
