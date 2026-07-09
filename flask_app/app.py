@@ -2,7 +2,7 @@
 PlatformPose — Flask + HTMX + SQLite server
 Run:  python flask_app/app.py
 """
-import os, platform
+import os, platform, pyuac
 from dotenv import load_dotenv
 import psutil, socket, time
 import sys
@@ -751,11 +751,11 @@ def _free_port(port: int):
     raise TimeoutError(f"Port {port} did not clear within 3 seconds.")
 
 if __name__ == '__main__':
-    if platform.system == 'Windows': 
-        import pyuac
+    if platform.system() == 'Windows': 
         if not pyuac.isUserAdmin():
             print("Re-launching as administrator")
             pyuac.runAsAdmin()
+            sys.exit()
 
     load_dotenv()
     PORT = int(os.getenv("PP_PORT", 5050))
