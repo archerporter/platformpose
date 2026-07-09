@@ -4,6 +4,8 @@ Run:  python flask_app/app.py
 """
 import os
 from dotenv import load_dotenv
+import psutil, socket, time
+import pyuac
 import sys
 import json
 import sqlite3
@@ -682,6 +684,23 @@ def api_export_video():
         mimetype='video/mp4',
     )
 
+def find_procs(k, port):
+    procs = []
+    known_pids = set()
+    for conn in psutil.net_connections(kind=k):
+        # Ignore addresses and pids named "None"
+        if conn.laddr and conn.pid and conn.laddr.port == port:
+            if conn.pid in known_pids:
+                continue
+            known_pids.add(conn.pid)
+            try:
+                procs.append(psutil.Process(conn.pid))
+            except psutil.NoSuchProcess:
+                pass
+            except psutil.AccessDenied:
+                print(f'AccessDenied opening PID {conn.pid}')
+    return procs
+
 def on_terminate(proc):
     print(f'Process {proc} terminated')
 
@@ -692,71 +711,70 @@ def _free_port(port: int):
     released before returning.  On MacOS, poll untill connection is refused 
     (up to 3 s).
     """
-    import psutil, socket, time
 
-    # Find any occupying processes
+    # Find any processes bound to port
     procs = []
-    known_pids = set()
-    for conn in psutil.net_connections(kind='inet'):
-        # Ignore addresses and pids named "None"
-        if conn.laddr and conn.pid and conn.laddr.port == port:
-            if conn.pid in known_pids:
-                continue
-            known_pids.add(conn.pid)
-            try:
-                procs.append(psutil.Process(conn.pid))
-            except psutil.NoSuchProcess:
-                pass
-
+    procs.extend(find_procs('all', port))
     if not procs:
         return
 
+    # and their children
     for p in procs:
-        children = psutil.Process().children(recursive=True)
-        for c in children:
-            try:
-                c.terminate()
-            except psutil.NoSuchProcess:
-                pass
-        gone, alive = psutil.wait_procs(procs, timeout=1, callback=on_terminate)
-        for c in alive:
-            c.kill()
+        try:
+            children = p.children(recursive=True)
+            procs.extend(children)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
 
-        p.terminate()
+    for p in procs:
+        try: 
+            p.terminate()
+        except psutil.NoSuchProcess:
+            pass
+        except psutil.AccessDenied:
+            print(f'AccessDenied opening PID {p.pid}')
+
     gone, alive = psutil.wait_procs(procs, timeout=1, callback=on_terminate)
     for p in alive:
         p.kill()
 
-    # Poll until the port is actually free (macOS can hold sockets briefly)
     deadline = time.time() + 3.0
     while time.time() < deadline:
         try:
-            with socket.create_connection(('127.0.0.1', port), timeout=0.1):
-                pass           # still bound — keep waiting
-        except (ConnectionRefusedError, OSError):
-            return             # port is free
-        time.sleep(0.1)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('127.0.0.1', port))
+                s.listen(1) # refuse more than one connection
+                return s
+        except OSError:
+            s.close()
+            time.sleep(0.1)
+
+    raise TimeoutError(f"Port {port} did not clear within 3 seconds.")
 
 
 if __name__ == '__main__':
-    load_dotenv()
-    PORT = os.getenv("PP_PORT", 5050)
-
-    if '--_server-mode' in sys.argv:
-        # Background child — just run Flask
-        app.run(host='127.0.0.1', port=PORT, debug=False)
+    if not pyuac.isUserAdmin():
+        print("Re-launching as administrator")
+        pyuac.runAsAdmin()
     else:
-        # Launcher: free port, spawn detached child, open browser, exit
-        _free_port(PORT)
-        log_path = os.path.join(_HERE, 'server.log')
-        with open(log_path, 'w') as _log:
-            child = subprocess.Popen(
-                [sys.executable, os.path.abspath(__file__), '--_server-mode'],
-                stdout=_log,
-                stderr=_log,
-                start_new_session=True,
-            )
-        print(f'PlatformPose running at http://localhost:{PORT}  (PID {child.pid})')
-        print(f'Logs: {log_path}')
-        time.sleep(0.9)
-        webbrowser.open(f'http://localhost:{PORT}')
+        load_dotenv()
+        PORT = int(os.getenv("PP_PORT", 5050))
+
+        if '--_server-mode' in sys.argv:
+            # Background child — just run Flask
+            app.run(host='127.0.0.1', port=PORT, debug=False)
+        else:
+            # Launcher: free port, spawn detached child, open browser, exit
+            _free_port(PORT)
+            log_path = os.path.join(_HERE, 'server.log')
+            with open(log_path, 'w') as _log:
+                child = subprocess.Popen(
+                    [sys.executable, os.path.abspath(__file__), '--_server-mode'],
+                    stdout=_log,
+                    stderr=_log,
+                    start_new_session=True,
+                )
+            print(f'PlatformPose running at http://localhost:{PORT}  (PID {child.pid})')
+            print(f'Logs: {log_path}')
+            time.sleep(0.9)
+            webbrowser.open(f'http://localhost:{PORT}')
