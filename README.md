@@ -269,13 +269,13 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Linux**
 - **X11** is supported. XDG Desktop Portal must be installed with one or more backends.  scrot must also be installed.
-- **Wayland** is not currently supported. <!-- PlatformPose detects Wayland automatically and redirects the region selector and capture pipeline to XWayland. XWayland must be installed (it is included by default on most distributions). -->
+- **Wayland** is not currently supported.
 - Screen Recording permissions are not required.
 - The AppleScript window-focus step is silently skipped.
 
 **Windows**
 - PyAutoGUI works on Windows. The tkinter control panel requires no changes.
-- Windows requires 
+- On Windows, PlatformPose must be run as an administrator in order to kill previous instances of itself.
 ---
 
 ## Companion Tool: Figure and Frame
