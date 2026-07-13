@@ -24,7 +24,7 @@ Designed for researchers studying movement in social media video, it works with 
 ## Requirements
 
 - **macOS** (primary platform; Linux and Windows may work with adjustments — see [Platform Notes](#platform-notes))
-- **Python 3.11 or later** including the tkinter module
+- **Python 3.11 or later**, with the tkinter module included
 - `pose_landmarker_heavy.task` — MediaPipe model file (see [Download the Model](#download-the-model))
 - **Screen Recording permission** granted to Terminal (or whichever app runs Python) in System Settings → Privacy & Security
 
