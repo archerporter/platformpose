@@ -24,7 +24,7 @@ Designed for researchers studying movement in social media video, it works with 
 ## Requirements
 
 - **macOS** (primary platform; Linux and Windows may work with adjustments — see [Platform Notes](#platform-notes))
-- **Python 3.11 or later**
+- **Python 3.11 or later** including the tkinter module
 - `pose_landmarker_heavy.task` — MediaPipe model file (see [Download the Model](#download-the-model))
 - **Screen Recording permission** granted to Terminal (or whichever app runs Python) in System Settings → Privacy & Security
 
@@ -269,6 +269,7 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 **macOS**
 - Grant **Screen Recording** permission to Terminal (or your IDE) in System Settings → Privacy & Security → Screen Recording before the first run. PyAutoGUI's screenshot function requires this.
 - The app automatically brings the control panel window to the front using AppleScript.
+- On MacOS, PlatformPose must be run with administrator privileges in order to kill existing instances of itself on `PP_PORT`.
 
 **Linux**
 - **X11** is supported. XDG Desktop Portal must be installed with one or more backends.  scrot must also be installed.
