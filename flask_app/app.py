@@ -781,7 +781,7 @@ if __name__ == '__main__':
 
     if '--_server-mode' in sys.argv:
         # Background child — just run Flask
-        app.run(host='127.0.0.1', port=PORT, debug=True)
+        app.run(host='127.0.0.1', port=PORT, debug=False)
     else:
         # Launcher: free port, spawn detached child, open browser, exit
         _free_port(PORT)
