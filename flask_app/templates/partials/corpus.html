@@ -85,6 +85,7 @@
       <th>Retention</th>
       <th>First captured</th>
       <th></th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -111,6 +112,12 @@
       </td>
       <td style="font-size:0.75rem; color:var(--text-muted);">{{ row.first_seen or '—' }}</td>
       <td>
+        <a class="btn btn-outline btn-sm"
+           href="/api/export-csv?project={{ project }}&video_id={{ row.video_id }}">
+            Export CSV
+        </a>
+      </td>
+      <td>
         <a href="/visualize?project={{ project }}&video_id={{ row.video_id }}"
            style="font-size:0.75rem; font-weight:600; color:var(--primary);
                   white-space:nowrap;">View ›</a>
@@ -136,7 +143,7 @@
   {% if db_exists %}
   <a class="btn btn-outline btn-sm"
      href="/api/export-csv?project={{ project }}">
-    Export CSV
+    Export Combined CSV
   </a>
   {% endif %}
 </div>
