@@ -66,8 +66,8 @@ opencv-contrib-python==4.13.0.92
 psutil==7.2.2
 python-dotenv==1.2.2
 # Below only if using Windows
-pyuac>=0.0.3
-pywin32>=312
+pyuac==0.0.3
+pywin32==312
 ```
 </details>
 
