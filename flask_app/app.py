@@ -499,21 +499,41 @@ def api_export_csv():
     if not os.path.exists(path):
         return ('No corpus found for this project.', 404)
 
-    with get_conn(project) as conn:
-        df = pd.read_sql_query('SELECT * FROM frames ORDER BY id', conn)
+    # If 'video_id' is specified, export only that video.
+    video_id = request.args.get('video_id')
+    if(video_id != None):
+        with get_conn(project) as conn:
+            df = pd.read_sql_query('SELECT * FROM frames WHERE video_id = ?', 
+                                   conn, params=[video_id])
 
-    tmp = tempfile.NamedTemporaryFile(
-        mode='w', suffix='.csv', delete=False, dir=_HERE,
-    )
-    df.to_csv(tmp.name, index=False)
-    tmp.close()
+        tmp = tempfile.NamedTemporaryFile(
+            mode='w', suffix='.csv', delete=False, dir=_HERE,
+        )
+        df.to_csv(tmp.name, index=False)
+        tmp.close()
 
-    return send_file(
-        tmp.name,
-        as_attachment=True,
-        download_name=f'{project}_corpus_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
-        mimetype='text/csv',
-    )
+        return send_file(
+            tmp.name,
+            as_attachment=True,
+            download_name=f'{project}_{video_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+            mimetype='text/csv',
+        )
+    else:
+        with get_conn(project) as conn:
+            df = pd.read_sql_query('SELECT * FROM frames ORDER BY id', conn)
+
+        tmp = tempfile.NamedTemporaryFile(
+            mode='w', suffix='.csv', delete=False, dir=_HERE,
+        )
+        df.to_csv(tmp.name, index=False)
+        tmp.close()
+
+        return send_file(
+            tmp.name,
+            as_attachment=True,
+            download_name=f'{project}_corpus_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+            mimetype='text/csv',
+        )
 
 
 # ── API: export skeleton video ─────────────────────────────────────────────────
