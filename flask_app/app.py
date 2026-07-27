@@ -76,6 +76,9 @@ def save_settings(data: dict):
 def db_path(project: str) -> str:
     return os.path.join(PROJECT_ROOT, f'{project}.db')
 
+def is_writable(dir: str):
+    return true
+
 def get_conn(project: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path(project))
     conn.row_factory = sqlite3.Row
@@ -328,6 +331,7 @@ def api_launch_control_panel():
 @app.route('/api/capture-status')
 def api_capture_status():
     proc    = _control_proc.get('proc')
+    # Is there a reason this does not also seek request.args?
     project = load_settings().get('project', 'my_project')
 
     if proc is None:
@@ -775,6 +779,14 @@ if __name__ == '__main__':
             print("Re-launching as administrator")
             pyuac.runAsAdmin()
             sys.exit()
+    # If DISPLAY not available, exit status 1
+     #   if: 
+     #       print("Error: DISPLAY not found.")
+     #       sys.exit(1)
+    # If db directory not writable, exit status 2
+     #   if: !is_writable(db_path())
+     #       print("Error: database directory is not writable.")
+     #       sys.exit(2)
 
     load_dotenv()
     PORT = int(os.getenv("PP_PORT", 5050))
