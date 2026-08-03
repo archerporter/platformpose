@@ -79,7 +79,7 @@ def db_path(project: str) -> str:
 def is_writable():
     settings = load_settings()
     project = settings.get('project')
-    if os.access(db_path(project), os.W_OK):
+    if os.access(db_path(project), os.W_OK) and os.access(PROJECT_ROOT, os.W_OK):
         return True
     return False
 
@@ -335,7 +335,6 @@ def api_launch_control_panel():
 @app.route('/api/capture-status')
 def api_capture_status():
     proc    = _control_proc.get('proc')
-    # Is there a reason this does not also seek request.args?
     project = load_settings().get('project', 'my_project')
 
     if proc is None:
@@ -788,7 +787,7 @@ if __name__ == '__main__':
      #       print("Error: DISPLAY not found.")
      #       sys.exit(1)
     if not is_writable():
-        print("Error: database directory is not writable.")
+        print("Error: database is not writable.")
         sys.exit(2)
 
     load_dotenv()
