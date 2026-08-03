@@ -776,10 +776,6 @@ def _free_port(port: int):
     raise TimeoutError(f"Port {port} did not clear within 3 seconds.")
 
 if __name__ == '__main__':
-    # If DISPLAY not available, exit status 1
-     #   if: 
-     #       print("Error: DISPLAY not found.")
-     #       sys.exit(1)
     if not is_writable():
         print("Error: database is not writable. Check folder or .db file permissions, or (Mac) run as sudo.")
         sys.exit(2)
