@@ -781,7 +781,7 @@ if __name__ == '__main__':
      #       print("Error: DISPLAY not found.")
      #       sys.exit(1)
     if not is_writable():
-        print("Error: database is not writable.")
+        print("Error: database is not writable. Check folder or .db file permissions, or (Mac) run as sudo.")
         sys.exit(2)
     if platform.system() == 'Windows': 
         import pyuac
