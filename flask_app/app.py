@@ -76,8 +76,12 @@ def save_settings(data: dict):
 def db_path(project: str) -> str:
     return os.path.join(PROJECT_ROOT, f'{project}.db')
 
-def is_writable(dir: str):
-    return true
+def is_writable():
+    settings = load_settings()
+    project = settings.get('project')
+    if os.access(db_path(project), os.W_OK):
+        return True
+    return False
 
 def get_conn(project: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path(project))
@@ -783,10 +787,9 @@ if __name__ == '__main__':
      #   if: 
      #       print("Error: DISPLAY not found.")
      #       sys.exit(1)
-    # If db directory not writable, exit status 2
-     #   if: !is_writable(db_path())
-     #       print("Error: database directory is not writable.")
-     #       sys.exit(2)
+    if not is_writable():
+        print("Error: database directory is not writable.")
+        sys.exit(2)
 
     load_dotenv()
     PORT = int(os.getenv("PP_PORT", 5050))
