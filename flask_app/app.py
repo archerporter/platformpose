@@ -776,12 +776,6 @@ def _free_port(port: int):
     raise TimeoutError(f"Port {port} did not clear within 3 seconds.")
 
 if __name__ == '__main__':
-    if platform.system() == 'Windows': 
-        import pyuac
-        if not pyuac.isUserAdmin():
-            print("Re-launching as administrator")
-            pyuac.runAsAdmin()
-            sys.exit()
     # If DISPLAY not available, exit status 1
      #   if: 
      #       print("Error: DISPLAY not found.")
@@ -789,6 +783,12 @@ if __name__ == '__main__':
     if not is_writable():
         print("Error: database is not writable.")
         sys.exit(2)
+    if platform.system() == 'Windows': 
+        import pyuac
+        if not pyuac.isUserAdmin():
+            print("Re-launching as administrator")
+            pyuac.runAsAdmin()
+            sys.exit()
 
     load_dotenv()
     PORT = int(os.getenv("PP_PORT", 5050))
