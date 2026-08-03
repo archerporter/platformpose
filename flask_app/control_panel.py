@@ -118,6 +118,7 @@ def main():
     frames_data = []
     frame_count = [0]   # total screenshots attempted
     pose_count  = [0]   # poses accepted into frames_data
+    success_ratio = [0.0] # pose_count / frame_count
     fps_val     = [0.0]
     save_error  = [None]  # populated if save_results raises
     capturing   = threading.Event()
@@ -171,6 +172,7 @@ def main():
                     pose_count[0] += 1
 
             frame_count[0] += 1
+            success_ratio[0] = pose_count[0 ]/ frame_count[0]
             fps_buf.append(time.time() - t0)
             if len(fps_buf) > 15:
                 fps_buf.pop(0)
@@ -267,8 +269,9 @@ def main():
         if state[0] == RECORDING:
             count_var.set(str(pose_count[0]))
             total = frame_count[0]
+            percent = success_ratio[0] * 100
             fps_str = f'{fps_val[0]} fps' if fps_val[0] > 0 else '—'
-            fps_var.set(f'{fps_str}  ·  {total} frames')
+            fps_var.set(f'{fps_str}  ·  {total} frames\n  {percent:.1f}% retained')
         if not quit_flag.is_set():
             root.after(200, _tick)
 
