@@ -11,6 +11,7 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _ensure_x11():
+    print("Ensuring x11...")
     """Force XWayland when running under a Wayland compositor."""
     if sys.platform != 'linux':
         return
@@ -243,19 +244,21 @@ def run_selector(initial_left=None, initial_top=None,
 
 
 if __name__ == '__main__':
-    delay = 3.5
-    if '--delay' in sys.argv:
-        idx   = sys.argv.index('--delay')
-        delay = float(sys.argv[idx + 1])
-    if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
-        with open(sys.argv[1]) as f:
-            coords = json.load(f)
-        run_selector(
-            coords.get('left'),
-            coords.get('top'),
-            coords.get('width',  425),
-            coords.get('height', 700),
-            delay=delay,
-        )
-    else:
-        run_selector(delay=delay)
+    # Primitive debugging. TODO: Remove
+    with open('region_selector.log', 'w') as sys.stdout:
+        delay = 3.5
+        if '--delay' in sys.argv:
+            idx   = sys.argv.index('--delay')
+            delay = float(sys.argv[idx + 1])
+        if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
+            with open(sys.argv[1]) as f:
+                coords = json.load(f)
+            run_selector(
+                coords.get('left'),
+                coords.get('top'),
+                coords.get('width',  425),
+                coords.get('height', 700),
+                delay=delay,
+            )
+        else:
+            run_selector(delay=delay)
