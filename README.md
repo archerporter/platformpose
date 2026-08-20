@@ -4,7 +4,7 @@
 
 PlatformPose extracts body pose data from any video playing in a browser — without API access, video downloads, or platform permissions. It uses [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker) to detect 33 body landmarks from screenshots taken during playback, and stores the results in a portable SQLite database you can query, visualize, or export to CSV.
 
-Designed for researchers studying movement in social media video, it works with any platform that runs in a browser: YouTube, TikTok, Instagram, Vimeo, or locally served files.
+Designed for researchers studying movement in digital-born video, it works with any platform that runs in a browser: YouTube, TikTok, Instagram, Vimeo, or locally served files.
 
 ---
 
@@ -307,7 +307,7 @@ The initial research application is the movement analysis of social media dance 
 ## Author
 
 **L. Archer Porter**  
-Researcher working at the intersection of digital humanities, dance studies, and social media studies.
+Researcher working at the intersection of digital humanities, performance studies, and digital vernacular archives. Porter is Visiting Professor of Digital Humanities in the Bass School of Arts, Humanities, and Technology at University of Texas at Dallas.
 
 ---
 
