@@ -30,6 +30,8 @@ def _ensure_x11():
             os.environ.get('XDG_SESSION_TYPE', '').lower() == 'wayland'):
         return
     os.environ.setdefault('DISPLAY', ':0')
+    os.environ['GDK_BACKEND'] = 'x11'
+    os.environ['SDL_VIDEODRIVER'] = 'x11'
 
 READY, RECORDING, SAVING, DONE, ERROR = 'READY', 'RECORDING', 'SAVING', 'DONE', 'ERROR'
 
@@ -83,7 +85,11 @@ def main():
         min_pose_presence_confidence=0.5,
         min_tracking_confidence=0.5,
     )
-    landmarker = mp_vision.PoseLandmarker.create_from_options(lm_options)
+    _log(f'Trying to load {task_path}')
+    try:
+        landmarker = mp_vision.PoseLandmarker.create_from_options(lm_options)
+    except Exception as e:
+        _log(f'Pose landmarker initialization failed with error: {e}')
 
     # ── SQLite setup ──────────────────────────────────────────────────────────
     db_file = os.path.join(PROJECT_ROOT, f'{project}.db')

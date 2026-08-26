@@ -11,7 +11,6 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _ensure_x11():
-    print("Ensuring x11...")
     """Force XWayland when running under a Wayland compositor."""
     if sys.platform != 'linux':
         return
@@ -19,6 +18,7 @@ def _ensure_x11():
             os.environ.get('XDG_SESSION_TYPE', '').lower() == 'wayland'):
         return
     os.environ.setdefault('DISPLAY', ':0')
+    os.environ['GDK_BACKEND'] = 'x11'
     os.environ['SDL_VIDEODRIVER'] = 'x11'
 
 
@@ -44,7 +44,7 @@ def run_selector(initial_left=None, initial_top=None,
     The caller (Flask) shows a matching countdown in the browser so the user
     has time to switch to their video before the screenshot fires.
     """
-    _ensure_x11()
+    # _ensure_x11()
     # Get screen size via pyautogui — no pygame needed yet
     screen_w, screen_h = pyautogui.size()
 
@@ -244,21 +244,19 @@ def run_selector(initial_left=None, initial_top=None,
 
 
 if __name__ == '__main__':
-    # Primitive debugging. TODO: Remove
-    with open('region_selector.log', 'w') as sys.stdout:
-        delay = 3.5
-        if '--delay' in sys.argv:
-            idx   = sys.argv.index('--delay')
-            delay = float(sys.argv[idx + 1])
-        if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
-            with open(sys.argv[1]) as f:
-                coords = json.load(f)
-            run_selector(
-                coords.get('left'),
-                coords.get('top'),
-                coords.get('width',  425),
-                coords.get('height', 700),
-                delay=delay,
-            )
-        else:
-            run_selector(delay=delay)
+    delay = 3.5
+    if '--delay' in sys.argv:
+        idx   = sys.argv.index('--delay')
+        delay = float(sys.argv[idx + 1])
+    if len(sys.argv) > 1 and not sys.argv[1].startswith('--'):
+        with open(sys.argv[1]) as f:
+            coords = json.load(f)
+        run_selector(
+            coords.get('left'),
+            coords.get('top'),
+            coords.get('width',  425),
+            coords.get('height', 700),
+            delay=delay,
+        )
+    else:
+        run_selector(delay=delay)
