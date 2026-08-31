@@ -76,6 +76,13 @@ def save_settings(data: dict):
 def db_path(project: str) -> str:
     return os.path.join(PROJECT_ROOT, f'{project}.db')
 
+def is_writable():
+    settings = load_settings()
+    project = settings.get('project')
+    if os.access(db_path(project), os.W_OK) and os.access(PROJECT_ROOT, os.W_OK):
+        return True
+    return False
+
 def get_conn(project: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path(project))
     conn.row_factory = sqlite3.Row
@@ -769,6 +776,9 @@ def _free_port(port: int):
     raise TimeoutError(f"Port {port} did not clear within 3 seconds.")
 
 if __name__ == '__main__':
+    if not is_writable():
+        print("Error: database is not writable. Check folder or .db file permissions, or (Mac) run as sudo.")
+        sys.exit(2)
     if platform.system() == 'Windows': 
         import pyuac
         if not pyuac.isUserAdmin():
