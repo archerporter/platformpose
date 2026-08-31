@@ -273,7 +273,10 @@ PlatformPose was developed and tested on **macOS**. The following notes apply to
 
 **Linux**
 - **X11** is supported. XDG Desktop Portal must be installed with one or more backends.  scrot must also be installed.
-- **Wayland** is not currently supported.
+- **Wayland** has limited support due to its tightened screenshot restrictions. PlatformPose can be run within the GNOME desktop environment by following these steps.
+    - Install gnome-screenshot from your package manager.  Be warned that this application captures screenshots at a low frame rate; performance will be reduced compared to X11.
+    - Install the [Allow gnome-screenshot](https://extensions.gnome.org/extension/9127/allow-gnome-screenshot/) extension.  You will need the gnome-shell and gnome-browser-connector.
+    - Before running PlatformPose, run `xhost +local:$USER`.  This will grant screenshot permission until the next system reboot.  If the command `xhost` is not found, check that xorg-xhost is installed.
 - Screen Recording permissions are not required.
 - The AppleScript window-focus step is silently skipped.
 

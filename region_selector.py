@@ -18,6 +18,7 @@ def _ensure_x11():
             os.environ.get('XDG_SESSION_TYPE', '').lower() == 'wayland'):
         return
     os.environ.setdefault('DISPLAY', ':0')
+    os.environ['GDK_BACKEND'] = 'x11'
     os.environ['SDL_VIDEODRIVER'] = 'x11'
 
 

@@ -785,6 +785,11 @@ if __name__ == '__main__':
             print("Re-launching as administrator")
             pyuac.runAsAdmin()
             sys.exit()
+    else: 
+        # Windows will always return 'None'
+        if os.getenv('DISPLAY') == None: 
+            print("Error: DISPLAY not found.")
+            sys.exit(1)
 
     load_dotenv()
     PORT = int(os.getenv("PP_PORT", 5050))
