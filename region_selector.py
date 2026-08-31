@@ -44,7 +44,7 @@ def run_selector(initial_left=None, initial_top=None,
     The caller (Flask) shows a matching countdown in the browser so the user
     has time to switch to their video before the screenshot fires.
     """
-    # _ensure_x11()
+    _ensure_x11()
     # Get screen size via pyautogui — no pygame needed yet
     screen_w, screen_h = pyautogui.size()
 
