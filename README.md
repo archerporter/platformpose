@@ -1,8 +1,8 @@
 # PlatformPose
 
-**Screen-capture pose estimation for video research.**
+Screen-capture pose estimation for video research.
 
-PlatformPose extracts body pose data from any video playing in a browser — without API access, video downloads, or platform permissions. It uses [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker) to detect 33 body landmarks from screenshots taken during playback, and stores the results in a portable SQLite database you can query, visualize, or export to CSV.
+PlatformPose extracts body pose data from any video playing in a browser (without API access or video downloads). It uses [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker) to detect 33 body landmarks from a series of screenshots taken during playback, and stores the results in a portable SQLite database you can query, visualize, or export to CSV.
 
 Designed for researchers studying movement in digital-born video, it works with any platform that runs in a browser: YouTube, TikTok, Instagram, Vimeo, or locally served files.
 
@@ -32,21 +32,21 @@ Designed for researchers studying movement in digital-born video, it works with 
 
 ## Installation
 
-### 1. Clone the repository
+### 1. clone the repository
 
 ```bash
 git clone https://github.com/archerporter/platformpose.git
 cd platformpose
 ```
 
-### 2. Create and activate a virtual environment
+### 2. create and activate a virtual environment
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -71,7 +71,7 @@ pywin32==312
 ```
 </details>
 
-### 4. Download the model
+### 4. download the model
 
 PlatformPose uses MediaPipe's [Pose Landmarker Heavy](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task) model. Download it and place it in the project root:
 
@@ -107,7 +107,7 @@ To stop the server, use the printed PID (`kill 12345`) or simply re-run the scri
 
 ## Usage Guide
 
-### Step 1 — Configure your project
+### step 1 — Configure your project
 
 In the **Settings** sidebar, enter:
 
@@ -124,13 +124,13 @@ Settings can be loaded at startup from `flask_app/settings.json`.  See `flask_ap
 
 See [Settings Reference](#settings-reference) for a complete list of options.
 
-### Step 2 — Define the capture region
+### step 2 — Define the capture region
 
 Click **Define Region**. After a 3-second countdown (giving you time to switch windows), a region selector appears as an overlay over your screen. Drag the highlighted rectangle to cover the video player precisely, then press **Enter** or **Space** to confirm.
 
 The selected coordinates are saved and used for all subsequent captures in this session.
 
-### Step 3 — Check capture conditions
+### step 3 — Check capture conditions
 
 Before recording, review the **Before You Capture** checklist. Pose estimation quality depends heavily on what the camera sees:
 
@@ -138,7 +138,7 @@ Before recording, review the **Before You Capture** checklist. Pose estimation q
 - Adequate lighting, no obstructions over the dancer
 - Capture region covers only the video player (no browser chrome)
 
-### Step 4 — Launch the control panel
+### step 4 — Launch the control panel
 
 Click **Launch Control Panel**. A small floating window appears with a large pose counter. Navigate to your video in another tab and begin playback, then:
 
@@ -146,7 +146,7 @@ Click **Launch Control Panel**. A small floating window appears with a large pos
 - Press **Space** (or click **Stop**) when the video ends
 - The session saves automatically and the panel closes
 
-### Step 5 — Review and export
+### step 5 — Review and export
 
 **Corpus Status** on the home page shows all captured videos for the current project with frame counts, duration, and retention rates. Click **View →** next to any video to open the skeleton visualizer, or click **Export CSV** to download the full corpus.
 
@@ -178,7 +178,7 @@ The visualizer (`/visualize`) plays back captured sessions as an animated skelet
 
 Each captured video produces rows in a project-level SQLite database at `<project>.db` in the project root.
 
-### Table: `frames`
+### table: `frames`
 
 | Column | Type | Description |
 |---|---|---|
@@ -193,7 +193,7 @@ Each captured video produces rows in a project-level SQLite database at `<projec
 | `captured_at` | TEXT | UTC datetime of row insertion |
 | `lm0_x` … `lm32_vis` | REAL | 33 landmarks × 4 values each (see below) |
 
-### Landmark columns
+### landmark columns
 
 Each of the 33 MediaPipe landmarks produces four columns:
 
@@ -296,11 +296,9 @@ See the [Figure and Frame repository](https://github.com/archerporter/figure-fra
 
 ## Research Context
 
-PlatformPose was developed in response to the contraction of social media data access for academic researchers — what has been termed the *post-API research landscape*. Commercial platforms have progressively restricted or eliminated research-grade data access, creating methodological constraints for scholars working with digital cultural materials.
+PlatformPose was developed in response to limitations to social media data access for academic researchers. Commercial platforms have progressively restricted or eliminated research-grade data access, creating methodological constraints for scholars working with digital cultural materials.
 
-The tool operates at the screen level rather than the API level. It captures what is visible during normal browser playback, making it platform-agnostic and independent of platform data policies. This approach trades completeness (no audio, no metadata, no comments) for accessibility: any video a researcher can watch, they can analyze.
-
-The initial research application is the movement analysis of social media dance video — specifically, how dancers adapt choreography to the constraints of portrait-frame composition on short-form video platforms.
+The tool operates at the screen level rather than at the API level. It captures what is visible during normal browser playback, making it platform-agnostic and independent of platform data policies. This approach trades completeness (no audio, no metadata, no comments) for accessibility. That is, if a dance video is visible on a screen, then the researcher can read and record its movement.
 
 ---
 
