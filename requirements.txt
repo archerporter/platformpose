@@ -1,8 +1,7 @@
 Flask>=3.1
-mediapipe>=0.10.35
+mediapipe>=0.10
 numpy>=2.0
 pandas>=2.0
-# pyscreeze @ git+https://github.com/peternschmit/pyscreeze-wayland
 PyAutoGUI>=0.9.54
 pygame-ce>=2.5.7
 opencv-contrib-python>=4.10
